@@ -1,0 +1,21 @@
+version: '3.9'
+
+# ======> READ THIS FIRST <======
+# You have two options for the config file:
+# Option 1 => You can map to the default path in docker [/app/config/config.yaml] and run the app without the --config flag
+# Option 2 => You can map to a custom path in docker but you must run the app with the --config flag
+
+services:
+  app:
+    build: .
+    restart: on-failure:10
+    command: [ "./main", "schedule:list", "--config=/cfg/config.yaml" ]
+    volumes:
+      - ./config/config.yaml:/cfg/config.yaml
+
+  mongo:
+    image: mongo:6.0.4-jammy
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_user
+      MONGO_INITDB_ROOT_PASSWORD: mongo_password

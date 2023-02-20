@@ -1,0 +1,9 @@
+discord:
+  token: ""
+  channelId: ""
+
+
+schedules:
+  - job: "JobA1"
+    cron: "*/60 * * * * *" # every 60 second
+    isEnabled: true
