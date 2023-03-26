@@ -1,1 +1,4 @@
 config/config.yaml
+doc/
+tmp/
+.vscode/

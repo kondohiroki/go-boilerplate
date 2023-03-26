@@ -15,3 +15,11 @@
 # vendor/
 
 config/config.yaml
+
+.DS_Store
+
+log/*.log
+
+tmp/
+
+.env

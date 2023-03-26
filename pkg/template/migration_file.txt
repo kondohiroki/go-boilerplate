@@ -1,0 +1,34 @@
+package migrations
+
+import (
+	"github.com/kondohiroki/go-boilerplate/internal/app"
+)
+
+func init() {
+	Migrations = append(Migrations, <migration_name>)
+}
+
+var <migration_name> = &Migration{
+	Name: "<filename>",
+	Up: func() error {
+		_, err := c.PgConn.Exec(context.Background(), `
+			// code here
+		`)
+
+		if err != nil {
+			return err
+		}
+		return nil
+
+	},
+	Down: func() error {
+		_, err := c.PgConn.Exec(context.Background(), `
+			// code here
+		`)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	},
+}

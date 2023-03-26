@@ -11,7 +11,7 @@ This boilerplate is intended to be used as a starting point for a go application
 - [x] Scheduler with Cron
 - [x] PostgreSQL
 - [x] Docker
-- [x] Discord
+- [x] Fiber Router 
 
 ## Use Cases
 - [x] As a Web Server
@@ -43,54 +43,6 @@ This boilerplate is intended to be used as a starting point for a go application
     ```sh
     docker compose up
     ```
-## Project Structure
-```
-.
-├── Dockerfile
-├── LICENSE
-├── Makefile
-├── README.md
-├── cmd
-│   ├── notify.go
-│   ├── root.go
-│   └── schedule.go
-├── config
-│   ├── config.example.yaml
-│   ├── config.go
-│   └── config.yaml
-├── deploy
-├── doc
-│   └── images
-│       ├── diagram.png
-│       └── homepage.png
-├── docker-compose.yml
-├── go.mod
-├── go.sum
-├── internal
-│   ├── app
-│   │   └── context.go
-│   ├── discord
-│   │   └── discord.go
-│   ├── jobs
-│   │   ├── discord.go
-│   │   └── get_sku.go
-│   ├── logger
-│   │   └── zap_logger.go
-│   ├── pgsql
-│   │   ├── migrations
-│   │   └── postgresql.go
-│   └── scheduler
-│       └── scheduler.go
-├── main.go
-└── pkg
-    ├── color
-    │   └── color_code.go
-    ├── request
-    │   ├── grpc.go
-    │   └── http.go
-    └── versioning
-        └── versioning.go
-```
 
 ## How to Use
 ### Configuration
@@ -99,11 +51,11 @@ This boilerplate is intended to be used as a starting point for a go application
 - `cmd/root.go`
   - `config/config.yaml` is loaded by default
   - You can specify the configuration file with the `--config` flag
-- `internal/app/context.go`
-  - You can access appContext from anywhere in the application
+- `internal/app/<your-handler>/<xxx>.go`
+  - Define your handler functions for your endpoint
 - `internal/logger/zap_logger.go`
   - You can see the log settings in the `NewZapLogger` function
-- `jobs/`
+- `job/`
   - You can add your own jobs here
 - `scheduler/scheduler.go`
   - You can schedule your jobs here
