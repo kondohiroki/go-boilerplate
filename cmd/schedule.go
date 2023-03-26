@@ -1,41 +1,59 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 
-	"github.com/kondohiroki/go-boilerplate/internal/app"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/kondohiroki/go-boilerplate/config"
 	"github.com/kondohiroki/go-boilerplate/internal/scheduler"
+	"github.com/lnquy/cron"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	rootCmd.AddCommand(
-		listScheduleCommand(),
-		startScheduleCommand(),
+		listScheduleCommand,
+		startScheduleCommand,
 	)
 }
 
-func listScheduleCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "schedule:list",
-		Short: "List all schedule jobs",
-		Run: func(cmd *cobra.Command, args []string) {
-
-			fmt.Printf("%-20s%-15s%s\n", "Cron", "IsEnabled", "Job")
-			for _, schedule := range app.GetAppContext().Config.Schedules {
-				fmt.Printf("%-20s%-15t%s\n", schedule.Cron, schedule.IsEnabled, schedule.Job)
-			}
-
-		},
-	}
+var startScheduleCommand = &cobra.Command{
+	Use:   "schedule:run",
+	Short: "Start schedule job",
+	Run: func(_ *cobra.Command, _ []string) {
+		printScheduleList()
+		scheduler.Start()
+	},
 }
 
-func startScheduleCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "schedule:run",
-		Short: "Start schedule job",
-		Run: func(cmd *cobra.Command, args []string) {
-			scheduler.Start(app.GetAppContext())
-		},
+var listScheduleCommand = &cobra.Command{
+	Use:   "schedule:list",
+	Short: "List all schedule jobs",
+	Run: func(_ *cobra.Command, _ []string) {
+
+		printScheduleList()
+
+	},
+}
+
+func printScheduleList() {
+	exprDesc, _ := cron.NewDescriptor()
+
+	// Print the job list as a table in the console
+	tableWriter := table.NewWriter()
+	tableWriter.SetOutputMirror(os.Stdout)
+	tableWriter.AppendHeader(table.Row{"No.", "Job Name", "Cron Expression", "Schedule"})
+	for i, schedule := range config.GetConfig().Schedules {
+		desc, _ := exprDesc.ToDescription(schedule.Cron, cron.Locale_en)
+
+		tableWriter.AppendRow(table.Row{
+			i + 1,
+			schedule.Job,
+			schedule.Cron,
+			desc,
+		})
+
 	}
+
+	tableWriter.Render()
 }

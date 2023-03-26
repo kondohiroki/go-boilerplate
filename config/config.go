@@ -12,13 +12,54 @@ var config *Config
 var m sync.Mutex
 
 type Config struct {
-	Discord   Discord    `yaml:"discord"`
-	Schedules []Schedule `yaml:"schedules"`
+	Env        string     `yaml:"env"`
+	App        App        `yaml:"app"`
+	HttpServer HttpServer `yaml:"httpServer"`
+	Log        Log        `yaml:"log"`
+	Schedules  []Schedule `yaml:"schedules"`
+	Postgres   Postgres   `yaml:"postgres"`
+	Sentry     Sentry     `yaml:"sentry"`
 }
 
-type Discord struct {
-	Token     string `yaml:"token"`
-	ChannelID string `yaml:"channelId"`
+type HttpServer struct {
+	Port int `yaml:"port"`
+}
+
+type Log struct {
+	Level           string `yaml:"level"`
+	StacktraceLevel string `yaml:"stacktraceLevel"`
+	FileEnabled     bool   `yaml:"fileEnabled"`
+	FilePath        string `yaml:"filePath"`
+	MaxAge          int    `yaml:"maxAge"`
+	MaxBackups      int    `yaml:"maxBackups"`
+}
+
+type Label struct {
+	En string `json:"en"`
+	Th string `json:"th"`
+}
+
+type App struct {
+	Name       string `yaml:"name"`
+	NameForCLI string `yaml:"nameForCLI"`
+}
+
+type Postgres struct {
+	Host            string `yaml:"host"`
+	Port            int    `yaml:"port"`
+	Username        string `yaml:"username"`
+	Password        string `yaml:"password"`
+	Database        string `yaml:"database"`
+	Schema          string `yaml:"schema"`
+	MaxConnections  int32  `yaml:"maxConnections"`
+	MaxConnIdleTime int32  `yaml:"maxConnIdleTime"`
+}
+
+type Sentry struct {
+	Dsn         string `yaml:"dsn"`
+	Environment string `yaml:"environment"`
+	Release     string `yaml:"release"`
+	Debug       bool   `yaml:"debug"`
 }
 
 type Schedule struct {

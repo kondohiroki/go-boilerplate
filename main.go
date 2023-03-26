@@ -5,17 +5,19 @@ import (
 	"os"
 
 	"github.com/kondohiroki/go-boilerplate/cmd"
-	"github.com/kondohiroki/go-boilerplate/internal/app"
+	"github.com/kondohiroki/go-boilerplate/internal/db"
+	"github.com/kondohiroki/go-boilerplate/internal/logger"
 )
 
 func main() {
 	defer func() {
 		_ = os.Remove("/tmp/live")
 
-		// Close Discord connection
-		if app.GetAppContext() != nil && app.GetAppContext().Discord != nil {
-			_ = app.GetAppContext().Discord.Close()
-		}
+		// Close the database connection pool
+		db.ClosePgxPool()
+
+		// Flush the log buffer
+		logger.Log.Sync()
 	}()
 
 	// Liveness probe for Kubernetes

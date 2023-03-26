@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.20.1-alpine3.17 as builder
+FROM golang:1.20.2-alpine3.17 as builder
 
 RUN apk add --no-cache git
 
@@ -18,4 +18,4 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 
-CMD ["./main"]
+ENTRYPOINT ["./main"]

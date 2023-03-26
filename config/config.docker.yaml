@@ -15,7 +15,7 @@ log:
   maxBackups: 10 # umber of log files
 
 postgres:
-  host: "localhost"
+  host: "postgres"
   port: 5432
   database: "my_database"
   schema: "my_schema"
@@ -29,6 +29,7 @@ sentry:
   environment: "production"
   release: "go-boilerplate@v0.1.0"
   debug: false
-# schedules:
-#   - cron: "0 */20 * * * *"
-#     job: "SyncAll"
+
+schedules:
+  - cron: "0 */30 * * * *"
+    job: "DoSomething"

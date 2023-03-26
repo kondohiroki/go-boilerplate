@@ -6,16 +6,68 @@ version: '3.9'
 # Option 2 => You can map to a custom path in docker but you must run the app with the --config flag
 
 services:
-  app:
+  api:
     build: .
+    image: go-boilerplate:latest
     restart: on-failure:10
-    command: [ "./main", "schedule:list", "--config=/cfg/config.yaml" ]
+    command: [ "serve-api", "--config=/config/config.yaml" ]
     volumes:
-      - ./config/config.yaml:/cfg/config.yaml
+      - ./config/config.docker.yaml:/config/config.yaml
+    ports:
+      - 8082:8082
+    depends_on:
+      - postgres
+      - migrate
 
-  mongo:
-    image: mongo:6.0.4-jammy
-    restart: always
+  scheduler:
+    build: .
+    image: go-boilerplate:latest
+    restart: on-failure:10
+    command: [ "schedule:run", "--config=/config/config.yaml" ]
+    volumes:
+      - ./config/config.docker.yaml:/config/config.yaml
+    depends_on:
+      - postgres
+      - migrate
+
+  migrate:
+    build: .
+    image: go-boilerplate:latest
+    restart: on-failure:10
+    command: [ "db:migrate", "--config=/config/config.yaml" ]
+    volumes:
+      - ./config/config.docker.yaml:/config/config.yaml
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:14.6-alpine3.17
+    restart: on-failure
+    volumes:
+      - ../tmp/postgres:/var/lib/postgresql/data
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo_user
-      MONGO_INITDB_ROOT_PASSWORD: mongo_password
+      POSTGRES_USER: my_user
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: my_db
+    ports:
+      - 5432:5432
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "my_user",
+          "-d",
+          "my_user"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  # Uncomment this section if you want to use mongo
+  # mongo:
+  #   image: mongo:6.0.4-jammy
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: mongo_user
+  #     MONGO_INITDB_ROOT_PASSWORD: mongo_password
