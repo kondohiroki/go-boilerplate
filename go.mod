@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/bytedance/sonic v1.8.6
 	github.com/getsentry/sentry-go v0.19.0
-	github.com/go-co-op/gocron v1.18.0
+	github.com/go-co-op/gocron v1.19.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.12.0
