@@ -3,7 +3,7 @@ module github.com/kondohiroki/go-boilerplate
 go 1.19
 
 require (
-	github.com/bytedance/sonic v1.8.6
+	github.com/bytedance/sonic v1.8.7
 	github.com/getsentry/sentry-go v0.19.0
 	github.com/go-co-op/gocron v1.19.0
 	github.com/go-playground/locales v0.14.1
