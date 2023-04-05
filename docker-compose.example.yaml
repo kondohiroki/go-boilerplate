@@ -12,7 +12,7 @@ services:
     restart: on-failure:10
     command: [ "serve-api", "--config=/config/config.yaml" ]
     volumes:
-      - ./config/config.docker.yaml:/config/config.yaml
+      - ./config/config.yaml:/config/config.yaml
     ports:
       - 8082:8082
     depends_on:
@@ -25,7 +25,7 @@ services:
     restart: on-failure:10
     command: [ "schedule:run", "--config=/config/config.yaml" ]
     volumes:
-      - ./config/config.docker.yaml:/config/config.yaml
+      - ./config/config.yaml:/config/config.yaml
     depends_on:
       - postgres
       - migrate
@@ -36,7 +36,7 @@ services:
     restart: on-failure:10
     command: [ "db:migrate", "--config=/config/config.yaml" ]
     volumes:
-      - ./config/config.docker.yaml:/config/config.yaml
+      - ./config/config.yaml:/config/config.yaml
     depends_on:
       - postgres
 
@@ -52,15 +52,7 @@ services:
     ports:
       - 5432:5432
     healthcheck:
-      test:
-        [
-          "CMD",
-          "pg_isready",
-          "-U",
-          "my_user",
-          "-d",
-          "my_user"
-        ]
+      test: [ "CMD", "pg_isready", "-U", "my_user", "-d", "my_db" ]
       interval: 5s
       timeout: 5s
       retries: 20

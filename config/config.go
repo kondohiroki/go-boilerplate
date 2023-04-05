@@ -29,7 +29,9 @@ type Log struct {
 	Level           string `yaml:"level"`
 	StacktraceLevel string `yaml:"stacktraceLevel"`
 	FileEnabled     bool   `yaml:"fileEnabled"`
+	FileSize        int    `yaml:"fileSize"`
 	FilePath        string `yaml:"filePath"`
+	FileCompress    bool   `yaml:"fileCompress"`
 	MaxAge          int    `yaml:"maxAge"`
 	MaxBackups      int    `yaml:"maxBackups"`
 }

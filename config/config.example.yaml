@@ -1,4 +1,4 @@
-env: "production" # dev, staging, production
+env: "dev" # dev, staging, production
 app:
   name: "My App"
   nameForCLI: "my-app"
@@ -10,14 +10,16 @@ log:
   level: "debug"
   stacktraceLevel: "error" # debug, info, warn, error, dpanic, panic, fatal
   fileEnabled: false
+  fileSize: 10 # MB
   filePath: "log/log.log"
+  fileCompress: false # enable log file compress before rotate
   maxAge: 1 # days to keep log files
   maxBackups: 10 # umber of log files
 
 postgres:
-  host: "localhost"
+  host: "localhost" # use "host.docker.internal" if you run app inside docker container
   port: 5432
-  database: "my_database"
+  database: "my_db"
   schema: "my_schema"
   username: "my_user"
   password: "my_password"
@@ -26,7 +28,7 @@ postgres:
 
 sentry:
   dsn: ""
-  environment: "production"
+  environment: "DEV"
   release: "go-boilerplate@v0.1.0"
   debug: false
 # schedules:

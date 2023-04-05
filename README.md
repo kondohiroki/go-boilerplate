@@ -4,23 +4,6 @@
 
 This boilerplate is intended to be used as a starting point for a go application. It is not intended to be used as a but it is can be.
 
-## Supported Features
-- [x] Configuration with YAML
-- [x] Logging with Zap Logger
-- [x] CLI with Cobra
-- [x] Scheduler with Cron
-- [x] PostgreSQL
-- [x] Docker
-- [x] Fiber Router 
-
-## Use Cases
-- [x] As a Web Server
-  - [x] HTTP API
-  - [ ] gRPC API
-  - [ ] GraphQL API
-- [x] As a CLI Application
-- [x] As a Scheduler for Cron Jobs
-
 ## Getting Started
 ### Prerequisites
 -  Go 1.20
@@ -35,13 +18,21 @@ This boilerplate is intended to be used as a starting point for a go application
     ```sh
     go mod download
     ```
-3. Install Docker dependencies
+3. Copy the default configuration file
     ```sh
-    docker compose build -pull
+    cp config/config.example.yaml config/config.yaml
     ```
-4. Run the application
+4. Start the database
     ```sh
-    docker compose up
+    docker compose up -d
+    ```
+5. Run the application
+    ```sh
+    # Run normally
+    go run main.go serve-api
+
+    # Run with hot reload
+    air serve-api
     ```
 
 ## How to Use
@@ -60,6 +51,23 @@ This boilerplate is intended to be used as a starting point for a go application
 - `scheduler/scheduler.go`
   - You can schedule your jobs here
   - You can configure the cron expression in `config/config.yaml`
+
+
+## Supported Features
+- [x] Configuration with YAML
+- [x] Logging with Zap Logger
+- [x] CLI with Cobra
+- [x] Scheduler with Cron
+- [x] PostgreSQL
+- [x] Docker
+- [x] Fiber Router 
+
+## Use Cases
+- [x] As a Web Server
+  - [x] HTTP API
+  - [ ] gRPC API
+- [x] As a CLI Application
+- [x] As a Scheduler for Cron Jobs
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.

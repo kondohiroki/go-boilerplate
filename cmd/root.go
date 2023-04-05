@@ -56,10 +56,12 @@ func setUpConfig() {
 		configFile = defaultConfigFile
 	}
 
+	log.Default().Printf("Using config file: %s", configFile)
 	config.SetConfig(configFile)
 }
 
 func setUpLogger() {
+	log.Default().Printf("Using log level: %s", config.GetConfig().Log.Level)
 	logger.InitLogger("zap")
 }
 
@@ -67,21 +69,22 @@ func setUpPostgres() {
 	// Create the database connection pool
 	if config.GetConfig().Postgres.Host != "" {
 		if config.GetConfig().Postgres.Schema == "" {
-			log.Fatalf("Postgres schema is not set")
+			logger.Log.Fatal("Postgres schema is not set")
 		}
 
 		// Initialize database schema if it doesn't exist
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
+		logger.Log.Info("Initializing database schema", zap.String("schema", config.GetConfig().Postgres.Schema))
 		err := db.InitSchema(ctx, config.GetConfig().Postgres, config.GetConfig().Postgres.Schema)
 		if err != nil {
-			log.Fatalf("db.InitSchema() Error: %v", err)
+			logger.Log.Fatal("db.InitSchema()", zap.Error(err))
 		}
 
 		err = db.InitPgConnectionPool(config.GetConfig().Postgres)
 		if err != nil {
-			log.Fatalf("db.InitPgConnectionPool() Error: %v", err)
+			logger.Log.Fatal("db.InitPgConnectionPool()", zap.Error(err))
 		}
 	}
 
@@ -94,6 +97,7 @@ func setUpSentry() {
 	}
 
 	// Initialize sentry
+	logger.Log.Info("Initializing Sentry " + config.GetConfig().Sentry.Dsn)
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn: config.GetConfig().Sentry.Dsn,
 		// BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {

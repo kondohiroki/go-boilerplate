@@ -17,10 +17,10 @@ func newZapLogger() *zap.Logger {
 	// STEP 2: Set up the file writer
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   config.GetConfig().Log.FilePath,
-		MaxSize:    10,                                // megabytes
-		MaxBackups: config.GetConfig().Log.MaxBackups, // number of log files
-		MaxAge:     config.GetConfig().Log.MaxAge,     // days
-		Compress:   true,                              // disabled by default
+		MaxSize:    config.GetConfig().Log.FileSize,     // megabytes
+		MaxBackups: config.GetConfig().Log.MaxBackups,   // number of log files
+		MaxAge:     config.GetConfig().Log.MaxAge,       // days
+		Compress:   config.GetConfig().Log.FileCompress, // disabled by default
 	}
 
 	fileWriter := zapcore.AddSync(lumberjackLogger)

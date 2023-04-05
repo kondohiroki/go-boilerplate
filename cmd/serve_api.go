@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -36,11 +37,15 @@ var serveAPICmd = &cobra.Command{
 		// Get port from config
 		port := config.GetConfig().HttpServer.Port
 
-		logger.Log.Info(fmt.Sprintf("Starting server on port %d", port))
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
-
 		go func() {
+			localIP, _ := getLocalIP()
+
+			logger.Log.Info(fmt.Sprintf("Starting server on port %d", port))
+			logger.Log.Info(fmt.Sprintf("Local: http://localhost:%d", port))
+			logger.Log.Info(fmt.Sprintf("Network: http://%s:%d", localIP, port))
+
 			if err := r.Listen(fmt.Sprintf(":%d", port)); err != nil && err != http.ErrServerClosed {
 				logger.Log.Fatal(fmt.Sprintf("listen: %s\n", err))
 			}
@@ -59,4 +64,19 @@ var serveAPICmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func getLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String(), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("local IP not found")
 }
