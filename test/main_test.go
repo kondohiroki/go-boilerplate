@@ -1,8 +1,6 @@
 package test
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 )
@@ -24,13 +22,6 @@ func setup() {
 // Teardown is called after running tests
 func teardown() {
 
-}
-
-func executeRequest(request *http.Request) *httptest.ResponseRecorder {
-	responseRecorder := httptest.NewRecorder()
-	// router.ServeHTTP(responseRecorder, request)
-
-	return responseRecorder
 }
 
 func migrateTestDatabase() error {
