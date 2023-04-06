@@ -16,6 +16,7 @@ type Config struct {
 	App        App        `yaml:"app"`
 	HttpServer HttpServer `yaml:"httpServer"`
 	Log        Log        `yaml:"log"`
+	Scheduler  Scheduler  `yaml:"scheduler"`
 	Schedules  []Schedule `yaml:"schedules"`
 	Postgres   Postgres   `yaml:"postgres"`
 	Sentry     Sentry     `yaml:"sentry"`
@@ -62,6 +63,10 @@ type Sentry struct {
 	Environment string `yaml:"environment"`
 	Release     string `yaml:"release"`
 	Debug       bool   `yaml:"debug"`
+}
+
+type Scheduler struct {
+	Timezone string `yaml:"timezone"`
 }
 
 type Schedule struct {

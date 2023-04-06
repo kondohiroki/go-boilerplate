@@ -31,6 +31,9 @@ sentry:
   environment: "DEV"
   release: "go-boilerplate@v0.1.0"
   debug: false
+
+scheduler:
+  timezone: "Asia/Bangkok"
 # schedules:
 #   - cron: "0 */20 * * * *"
 #     job: "SyncAll"

@@ -3,23 +3,27 @@ package scheduler
 import (
 	"fmt"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/go-co-op/gocron"
 	"github.com/kondohiroki/go-boilerplate/config"
 )
 
-var UTC = time.UTC
-var AsiaBangkok = time.FixedZone("Asia/Bangkok", 7*60*60)
+var Timezone = time.Now().Location()
 
 func Start() {
-	s := gocron.NewScheduler(UTC)
+	if config.GetConfig().Scheduler.Timezone != "" {
+		Timezone, _ = time.LoadLocation(config.GetConfig().Scheduler.Timezone)
+	}
+
+	s := gocron.NewScheduler(Timezone)
 	s.SingletonModeAll()
 
 	for _, schedule := range config.GetConfig().Schedules {
 		if schedule.IsEnabled {
 			switch schedule.Job {
 			case "DoSomeThing":
-				cronjob, err := s.CronWithSeconds(schedule.Cron).Do(func() {
+				task, err := s.CronWithSeconds(schedule.Cron).Do(func() {
 					// j := job.NewJobContext()
 					// j.DoSomeThing()
 				})
@@ -30,13 +34,14 @@ func Start() {
 				}
 
 				// Set up event listeners
-				cronjob.SetEventListeners(func() {
-					fmt.Println("DoSomeThing Job started -- round: ", cronjob.RunCount())
+				task.SetEventListeners(func() {
+					fmt.Println("DoSomeThing Job started -- round: ", task.RunCount())
 				}, func() {
 					time.Sleep(1 * time.Second)
 
 					// Print next run time in both utc and asia/bangkok
-					fmt.Printf("\nNext run: %s / %s\n", cronjob.NextRun().UTC().String(), cronjob.NextRun().In(AsiaBangkok).String())
+					asiaBangkok, _ := time.LoadLocation("Asia/Bangkok")
+					fmt.Printf("\nNext run: %s / %s\n", task.NextRun().UTC().String(), task.NextRun().In(asiaBangkok).String())
 
 				})
 			}
@@ -44,7 +49,7 @@ func Start() {
 	}
 
 	fmt.Printf("Total jobs: %d jobs scheduled to run\n", len(s.Jobs()))
-	fmt.Printf("Location: %s\n", s.Location().String())
+	fmt.Printf("Timezone: %s\n", s.Location().String())
 	fmt.Println("Starting scheduler... (press Ctrl+C to quit)")
 
 	s.StartImmediately()
