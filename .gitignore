@@ -23,3 +23,5 @@ log/*.log
 tmp/
 
 .env
+
+*-coverage*

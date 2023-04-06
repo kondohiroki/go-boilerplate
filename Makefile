@@ -22,7 +22,10 @@ clean:
 	rm -f $(BINARY_NAME)
 
 test:
-	$(GOTEST) -v ./...
+	$(GOTEST) -v ./... \
+	-count=1 \
+	-cover \
+	-coverprofile=./unit-test-coverage.out
 
 coverage:
 	$(GOTEST) -v -coverprofile=coverage.out ./...

@@ -1,0 +1,39 @@
+env: "dev" # dev, staging, production
+app:
+  name: "My App"
+  nameForCLI: "my-app"
+
+httpServer:
+  port: 8082
+
+log:
+  level: "debug"
+  stacktraceLevel: "error" # debug, info, warn, error, dpanic, panic, fatal
+  fileEnabled: false
+  fileSize: 10 # MB
+  filePath: "log/log.log"
+  fileCompress: false # enable log file compress before rotate
+  maxAge: 1 # days to keep log files
+  maxBackups: 10 # umber of log files
+
+postgres:
+  host: "localhost" # use "host.docker.internal" if you run app inside docker container
+  port: 5432
+  database: "my_db"
+  schema: "my_schema"
+  username: "my_user"
+  password: "my_password"
+  maxConnections: 20
+  maxIdleConnections: 10
+
+sentry:
+  dsn: ""
+  environment: "DEV"
+  release: "go-boilerplate@v0.1.0"
+  debug: false
+
+scheduler:
+  timezone: "Asia/Bangkok"
+# schedules:
+#   - cron: "0 */20 * * * *"
+#     job: "SyncAll"
