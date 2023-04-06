@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/kondohiroki/go-boilerplate/config"
-	http_api "github.com/kondohiroki/go-boilerplate/internal/interface/httpapi"
-	"github.com/kondohiroki/go-boilerplate/internal/interface/httpapi/validation"
+	"github.com/kondohiroki/go-boilerplate/internal/interface/validation"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/kondohiroki/go-boilerplate/internal/router"
 	"github.com/spf13/cobra"
+
+	httpInterface "github.com/kondohiroki/go-boilerplate/internal/interface/http"
 )
 
 func init() {
@@ -29,7 +30,7 @@ var serveAPICmd = &cobra.Command{
 		r := router.NewFiberRouter()
 
 		// Register routes
-		http_api.RegisterRoute(r)
+		httpInterface.RegisterRoute(r)
 
 		// Create validator instance
 		validation.InitValidator()
@@ -45,6 +46,7 @@ var serveAPICmd = &cobra.Command{
 			logger.Log.Info(fmt.Sprintf("Starting server on port %d", port))
 			logger.Log.Info(fmt.Sprintf("Local: http://localhost:%d", port))
 			logger.Log.Info(fmt.Sprintf("Network: http://%s:%d", localIP, port))
+			logger.Log.Info("waiting for requests...")
 
 			if err := r.Listen(fmt.Sprintf(":%d", port)); err != nil && err != http.ErrServerClosed {
 				logger.Log.Fatal(fmt.Sprintf("listen: %s\n", err))

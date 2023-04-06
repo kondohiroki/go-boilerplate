@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	"github.com/kondohiroki/go-boilerplate/internal/interface/httpapi/response"
+	httpError "github.com/kondohiroki/go-boilerplate/internal/interface/http/error"
 	"github.com/kondohiroki/go-boilerplate/internal/router/middleware"
 )
 
@@ -17,18 +17,8 @@ func NewFiberRouter() *fiber.App {
 		JSONEncoder:           sonic.Marshal,
 		JSONDecoder:           sonic.Unmarshal,
 		DisableStartupMessage: true,
-		// EnablePrintRoutes:     true,
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return c.Status(fiber.StatusInternalServerError).JSON(
-				&response.Response{
-					Code:    1,
-					Message: err.Error(),
-					Data: fiber.Map{
-						"request_id": c.Locals("requestid"),
-					},
-				},
-			)
-		},
+		EnablePrintRoutes:     false,
+		ErrorHandler:          httpError.ErrorHandler,
 	})
 
 	// Set up global middleware
