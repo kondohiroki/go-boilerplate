@@ -120,9 +120,13 @@ func setUpSentry() {
 
 	if err != nil {
 		logger.Log.Error("Creata Sentry instant error: %v", zap.Error(err))
-	} else {
-		logger.Log.Info("Creata Sentry instant success")
+		return
 	}
+
+	logger.Log.Info("Creata Sentry instant success")
+
+	// send initial event to sentry with data
+	sentry.CaptureMessage("Sentry initialized")
 
 	defer sentry.Flush(2 * time.Second)
 }
