@@ -2,14 +2,11 @@ package transport
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/bytedance/sonic"
 )
 
 type HttpRequest struct {
@@ -81,13 +78,4 @@ func MakeHTTPRequest(req HttpRequest) (*http.Response, error) {
 	}
 
 	return res, nil
-}
-
-func MakeJsonObject(body []byte) (jsonObject map[string]interface{}) {
-	if err := sonic.Unmarshal(body, &jsonObject); err != nil {
-		fmt.Println("Error unmarshalling resonse body", err)
-	}
-
-	return jsonObject
-
 }
