@@ -1,9 +1,10 @@
-package logger
+package logger_test
 
 import (
 	"testing"
 
 	"github.com/kondohiroki/go-boilerplate/config"
+	. "github.com/kondohiroki/go-boilerplate/internal/logger"
 	"go.uber.org/zap/zapcore"
 )
 
