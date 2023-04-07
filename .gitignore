@@ -25,3 +25,5 @@ tmp/
 .env
 
 *-coverage*
+
+*coverage.html
