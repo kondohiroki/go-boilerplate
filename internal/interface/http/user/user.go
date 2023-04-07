@@ -21,7 +21,7 @@ func NewUserHTTPHandler(service user.UserService) *UserHTTPHandler {
 
 // Write me GetUsers function
 func (h *UserHTTPHandler) GetUsers(c *fiber.Ctx) error {
-	dtos, err := h.service.GetUsers()
+	dtos, err := h.service.GetUsers(c.Context())
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
 	}
@@ -40,7 +40,7 @@ func (h *UserHTTPHandler) GetUserByID(c *fiber.Ctx) error {
 	}
 
 	dti := user.GetUserDTI{ID: id}
-	dto, err := h.service.GetUserByID(dti)
+	dto, err := h.service.GetUserByID(c.Context(), dti)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
 	}
@@ -64,17 +64,12 @@ func (h *UserHTTPHandler) CreateUser(c *fiber.Ctx) error {
 	v, _ := validation.GetValidator()
 	if err := v.Struct(req); err != nil {
 		errors := validation.GetValidationErrors(err.(validator.ValidationErrors))
-		// c.Status(fiber.StatusUnprocessableEntity).JSON(&response.UnprocessableEntityError{
-		// 	Code:    fiber.StatusUnprocessableEntity,
-		// 	Message: "Request body is not valid format or missing required fields",
-		// 	Errors:  errors,
-		// })
 		c.Context().SetUserValue("errors", errors)
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "Request body is not valid format or missing required fields")
 	}
 
 	// Process the business logic
-	dto, err := h.service.CreateUser(user.CreateUserDTI{
+	dto, err := h.service.CreateUser(c.Context(), user.CreateUserDTI{
 		Name:  req.Name,
 		Email: req.Email,
 	})

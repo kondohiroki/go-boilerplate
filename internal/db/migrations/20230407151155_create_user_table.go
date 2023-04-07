@@ -7,14 +7,20 @@ import (
 )
 
 func init() {
-	Migrations = append(Migrations, <migration_name>)
+	Migrations = append(Migrations, createUserTable)
 }
 
-var <migration_name> = &Migration{
-	Name: "<filename>",
+var createUserTable = &Migration{
+	Name: "20230407151155_create_user_table",
 	Up: func() error {
 		_, err := db.GetPgxPool().Exec(context.Background(), `
-			// code here
+			CREATE TABLE users (
+				id SERIAL PRIMARY KEY,
+				name VARCHAR(255) NOT NULL,
+				email VARCHAR(255) NOT NULL UNIQUE
+			);
+
+			INSERT INTO users (name, email) VALUES ('Default User', 'user@example.com');
 		`)
 
 		if err != nil {

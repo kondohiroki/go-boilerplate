@@ -1,21 +1,26 @@
 package user
 
 import (
-	"github.com/google/uuid"
+	"context"
+
+	"github.com/kondohiroki/go-boilerplate/internal/db/model"
+	"github.com/kondohiroki/go-boilerplate/internal/repository"
 )
 
 type UserService interface {
-	GetUsers() ([]GetUserDTO, error)
-	GetUserByID(input GetUserDTI) (GetUserDTO, error)
-	CreateUser(input CreateUserDTI) (CreateUserDTO, error)
+	GetUsers(ctx context.Context) ([]GetUserDTO, error)
+	GetUserByID(ctx context.Context, input GetUserDTI) (GetUserDTO, error)
+	CreateUser(ctx context.Context, input CreateUserDTI) (CreateUserDTO, error)
 }
 
 type userService struct {
-	// Add your dependencies here, e.g. database, cache, etc.
+	Repo repository.Repository
 }
 
 func NewUserService() UserService {
-	return &userService{}
+	return &userService{
+		Repo: *repository.NewRepository(),
+	}
 }
 
 type GetUserDTI struct {
@@ -28,23 +33,25 @@ type GetUserDTO struct {
 	Email string `json:"email"`
 }
 
-func (s *userService) GetUsers() ([]GetUserDTO, error) {
-	// Replace with actual logic to retrieve the users from the database.
-	return []GetUserDTO{
-		{
-			ID:    1,
-			Name:  "John Doe",
-			Email: "john@gmail.com",
-		},
-		{
-			ID:    2,
-			Name:  "Lucy",
-			Email: "lucy@gmail.com",
-		},
-	}, nil
+func (s *userService) GetUsers(ctx context.Context) ([]GetUserDTO, error) {
+	users, err := s.Repo.User.GetUsersWithPagination(ctx, 10, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var usersDTO []GetUserDTO
+	for _, user := range users {
+		usersDTO = append(usersDTO, GetUserDTO{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+		})
+	}
+
+	return usersDTO, nil
 }
 
-func (s *userService) GetUserByID(input GetUserDTI) (GetUserDTO, error) {
+func (s *userService) GetUserByID(ctx context.Context, input GetUserDTI) (GetUserDTO, error) {
 	// Replace with actual logic to retrieve the user from the database.
 	return GetUserDTO{
 		ID:    input.ID,
@@ -59,13 +66,19 @@ type CreateUserDTI struct {
 }
 
 type CreateUserDTO struct {
-	ID uuid.UUID `json:"id"`
+	ID int `json:"id"`
 }
 
-func (s *userService) CreateUser(input CreateUserDTI) (CreateUserDTO, error) {
-	// Replace with actual logic to create the user in the database.
-	// return random ID
-	id := uuid.New()
+func (s *userService) CreateUser(ctx context.Context, input CreateUserDTI) (CreateUserDTO, error) {
+
+	id, err := s.Repo.User.AddUser(ctx, model.User{
+		Name:  input.Name,
+		Email: input.Email,
+	})
+
+	if err != nil {
+		return CreateUserDTO{}, err
+	}
 
 	return CreateUserDTO{
 		ID: id,
