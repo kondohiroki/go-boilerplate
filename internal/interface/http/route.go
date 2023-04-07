@@ -24,7 +24,8 @@ func RegisterRoute(r *fiber.App) {
 	userAPI := v1.Group("/users")
 	userService := user.NewUserService()
 	userHandler := httpUser.NewUserHTTPHandler(userService)
-	userAPI.Get("/:id", userHandler.GetUser)
+	userAPI.Get("/", userHandler.GetUsers)
+	userAPI.Get("/:id", userHandler.GetUserByID)
 	userAPI.Post("/", userHandler.CreateUser)
 
 	// Error Case Handler

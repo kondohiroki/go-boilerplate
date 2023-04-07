@@ -14,8 +14,6 @@ import (
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/kondohiroki/go-boilerplate/internal/router"
 	"github.com/spf13/cobra"
-
-	httpInterface "github.com/kondohiroki/go-boilerplate/internal/interface/http"
 )
 
 func init() {
@@ -28,9 +26,6 @@ var serveAPICmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Create http router
 		r := router.NewFiberRouter()
-
-		// Register routes
-		httpInterface.RegisterRoute(r)
 
 		// Create validator instance
 		validation.InitValidator()

@@ -14,7 +14,7 @@ func init() {
 }
 
 func TestInitLogger(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name          string
 		logDriver     string
 		logLevel      string
@@ -114,22 +114,22 @@ func TestInitLogger(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			// Update config
 			cfg := config.GetConfig()
-			cfg.Log.Level = tc.logLevel
-			cfg.Log.FileEnabled = tc.fileEnabled
+			cfg.Log.Level = tt.logLevel
+			cfg.Log.FileEnabled = tt.fileEnabled
 
-			InitLogger(tc.logDriver)
+			InitLogger(tt.logDriver)
 
 			if Log == nil {
 				t.Fatal("Expected logger to be initialized, but it is nil")
 			}
 
-			logLevel := Log.Core().Enabled(tc.expectedLevel)
+			logLevel := Log.Core().Enabled(tt.expectedLevel)
 			if !logLevel {
-				t.Errorf("Expected log level to be %v, but it's not enabled", tc.expectedLevel)
+				t.Errorf("Expected log level to be %v, but it's not enabled", tt.expectedLevel)
 			}
 		})
 	}

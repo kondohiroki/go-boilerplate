@@ -19,14 +19,28 @@ func NewUserHTTPHandler(service user.UserService) *UserHTTPHandler {
 	return &UserHTTPHandler{service: service}
 }
 
-func (h *UserHTTPHandler) GetUser(c *fiber.Ctx) error {
+// Write me GetUsers function
+func (h *UserHTTPHandler) GetUsers(c *fiber.Ctx) error {
+	dtos, err := h.service.GetUsers()
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
+	}
+
+	return c.JSON(response.CommonResponse{
+		Code:    0,
+		Message: "OK",
+		Data:    dtos,
+	})
+}
+
+func (h *UserHTTPHandler) GetUserByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(http.StatusBadRequest).SendString("Invalid user ID")
 	}
 
 	dti := user.GetUserDTI{ID: id}
-	dto, err := h.service.GetUser(dti)
+	dto, err := h.service.GetUserByID(dti)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
 	}

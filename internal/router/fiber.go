@@ -8,8 +8,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	httpError "github.com/kondohiroki/go-boilerplate/internal/interface/http/error"
 	"github.com/kondohiroki/go-boilerplate/internal/router/middleware"
+
+	httpInterface "github.com/kondohiroki/go-boilerplate/internal/interface/http"
+	httpError "github.com/kondohiroki/go-boilerplate/internal/interface/http/error"
 )
 
 func NewFiberRouter() *fiber.App {
@@ -33,6 +35,9 @@ func NewFiberRouter() *fiber.App {
 		WaitForDelivery: true,
 	}))
 	r.Use(middleware.EnhanceSentryEvent())
+
+	// Register routes (handlers)
+	httpInterface.RegisterRoute(r)
 
 	return r
 }

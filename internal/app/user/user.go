@@ -5,7 +5,8 @@ import (
 )
 
 type UserService interface {
-	GetUser(input GetUserDTI) (GetUserDTO, error)
+	GetUsers() ([]GetUserDTO, error)
+	GetUserByID(input GetUserDTI) (GetUserDTO, error)
 	CreateUser(input CreateUserDTI) (CreateUserDTO, error)
 }
 
@@ -22,12 +23,28 @@ type GetUserDTI struct {
 }
 
 type GetUserDTO struct {
-	ID    int
-	Name  string
-	Email string
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
-func (s *userService) GetUser(input GetUserDTI) (GetUserDTO, error) {
+func (s *userService) GetUsers() ([]GetUserDTO, error) {
+	// Replace with actual logic to retrieve the users from the database.
+	return []GetUserDTO{
+		{
+			ID:    1,
+			Name:  "John Doe",
+			Email: "john@gmail.com",
+		},
+		{
+			ID:    2,
+			Name:  "Lucy",
+			Email: "lucy@gmail.com",
+		},
+	}, nil
+}
+
+func (s *userService) GetUserByID(input GetUserDTI) (GetUserDTO, error) {
 	// Replace with actual logic to retrieve the user from the database.
 	return GetUserDTO{
 		ID:    input.ID,

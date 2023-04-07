@@ -1,0 +1,35 @@
+{
+    "type": "object",
+    "properties": {
+        "code": {
+            "type": "number"
+        },
+        "message": {
+            "type": "string"
+        },
+        "data": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "name",
+                "email"
+            ]
+        }
+    },
+    "required": [
+        "code",
+        "message",
+        "data"
+    ]
+}

@@ -70,7 +70,7 @@ func TestGetValidationErrors(t *testing.T) {
 }
 
 func TestValidatorTranslation(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
 		name          string
 		fieldName     string
 		fieldValue    interface{}
@@ -104,8 +104,8 @@ func TestValidatorTranslation(t *testing.T) {
 	require.NotNil(t, validate)
 	require.NotNil(t, trans)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			testData := testStruct{
 				Username: "valid_username",
 				Email:    "valid@example.com",
@@ -113,10 +113,10 @@ func TestValidatorTranslation(t *testing.T) {
 			}
 
 			value := reflect.ValueOf(&testData).Elem().FieldByNameFunc(func(fieldName string) bool {
-				return strings.ToLower(fieldName) == tc.fieldName
+				return strings.ToLower(fieldName) == tt.fieldName
 			})
 			require.True(t, value.IsValid())
-			value.Set(reflect.ValueOf(tc.fieldValue))
+			value.Set(reflect.ValueOf(tt.fieldValue))
 
 			err := validate.Struct(testData)
 			require.Error(t, err)
@@ -127,8 +127,8 @@ func TestValidatorTranslation(t *testing.T) {
 			require.Len(t, validationErrors, 1)
 			validationError := validationErrors[0]
 
-			assert.Equal(t, tc.fieldName, validationError.Field())
-			assert.Equal(t, tc.expectedError, validationError.Translate(trans))
+			assert.Equal(t, tt.fieldName, validationError.Field())
+			assert.Equal(t, tt.expectedError, validationError.Translate(trans))
 		})
 	}
 }

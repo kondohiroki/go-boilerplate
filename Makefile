@@ -21,11 +21,24 @@ clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 
-test:
-	$(GOTEST) -v ./... \
+unit-test:
+	@echo "Running unit tests"
+	@$(GOTEST) -v ./... \
 	-count=1 \
 	-cover \
+	-coverpkg=./... \
 	-coverprofile=./unit-test-coverage.out
+
+api-test:
+	@echo "Running api tests"
+	@$(GOTEST) -v ./test/... \
+	-count=1 \
+	-cover \
+	-coverpkg=./... \
+	-coverprofile=./api-test-coverage.out
+
+cov-html:
+	go tool cover -html=api-test-coverage.out -html=unit-test-coverage.out -o merged-coverage.html
 
 coverage:
 	$(GOTEST) -v -coverprofile=coverage.out ./...
@@ -38,13 +51,3 @@ vet:
 lint:
 	go get golang.org/x/lint/golint
 	$(GOPATH)/bin/golint ./...
-
-docker-build:
-	docker build -t $(MODULE_NAME) .
-
-docker-run:
-	docker run -p 8080:8080 $(MODULE_NAME)
-
-docker-push:
-	docker tag $(MODULE_NAME) registry.example.com/$(MODULE_NAME)
-	docker push registry.example.com/$(MODULE_NAME)
