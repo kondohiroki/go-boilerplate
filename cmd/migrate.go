@@ -31,6 +31,11 @@ var dbMigrateCommand = &cobra.Command{
 	Use:   "db:migrate",
 	Short: "Migrate database",
 	Run: func(_ *cobra.Command, _ []string) {
+		if len(migrations.Migrations) == 0 {
+			logger.Log.Info("No migrations found")
+			os.Exit(0)
+		}
+
 		// Initiate context
 		ctx := context.Background()
 
