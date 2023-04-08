@@ -7,7 +7,7 @@ httpServer:
   port: 8082
 
 log:
-  level: "error"
+  level: "info"
   stacktraceLevel: "error" # debug, info, warn, error, dpanic, panic, fatal
   fileEnabled: false
   fileSize: 10 # MB
