@@ -1,0 +1,29 @@
+name: Testing
+on:
+  push:
+    branches:
+      - main # or the name of your main branch
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  unit-test:
+    name: Go Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.x
+      - run: go mod download
+      - run: make unit-test
+
+  api-test:
+    name: Go API Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.x
+      - run: go mod download
+      - run: make api-test
