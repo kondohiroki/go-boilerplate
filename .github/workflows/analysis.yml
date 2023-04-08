@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     name: Build
-    needs: [unit-test, api-test]
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
@@ -19,12 +18,12 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: unit-test-coverage
-          path: .
+          path: artifacts
       - uses: actions/download-artifact@v3
         with:
           name: api-test-coverage
-          path: .
-      # Perform your desired analysis on the downloaded coverage files in the "artifacts" directory
+          path: artifacts
+      - run: mv artifacts/unit-test-coverage.out . && mv artifacts/api-test-coverage.out .
       - uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
