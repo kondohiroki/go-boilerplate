@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     name: Build
+    needs: [unit-test, api-test]
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
