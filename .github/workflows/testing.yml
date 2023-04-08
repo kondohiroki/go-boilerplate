@@ -29,6 +29,20 @@ jobs:
   api-test:
     name: Go API Test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: my_user
+          POSTGRES_PASSWORD: my_password
+          POSTGRES_DB: my_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
