@@ -63,7 +63,7 @@ func TestGetUserByID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := fastHTTPTester(t, r.Handler())
 
-			resp := e.GET("/api/v1/users/4").Expect()
+			resp := e.GET("/api/v1/users/1").Expect()
 
 			resp.Status(tt.expectedStatusCode)
 			resp.JSON().Schema(tt.expectedSchema)
