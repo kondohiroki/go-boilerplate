@@ -9,7 +9,7 @@ on:
 
 jobs:
   unit-test:
-    name: Go Unit Test
+    name: Unit Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
           name: unit-test-coverage
           path: unit-test-coverage.out
   api-test:
-    name: Go API Test
+    name: API Test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -66,7 +66,7 @@ jobs:
           name: api-test-coverage
           path: api-test-coverage.out
   sonarqube-analysis:
-    name: Build
+    name: SonarQube Analysis
     needs: [unit-test, api-test]
     runs-on: ubuntu-latest
     steps:
@@ -81,7 +81,6 @@ jobs:
         with:
           name: api-test-coverage
           path: .
-      - run: ls -la
       - uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
