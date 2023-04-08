@@ -35,8 +35,9 @@ var serveAPICmd = &cobra.Command{
 
 		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 		defer stop()
+
+		localIP, _ := getLocalIP()
 		go func() {
-			localIP, _ := getLocalIP()
 
 			logger.Log.Info(fmt.Sprintf("Starting server on port %d", port))
 			logger.Log.Info(fmt.Sprintf("Local: http://localhost:%d", port))

@@ -23,7 +23,7 @@ clean:
 
 unit-test:
 	@echo "Running unit tests"
-	@$(GOTEST) -v ./... \
+	@$(GOTEST) -v $(shell go list ./... | grep -v /test) \
 	-count=1 \
 	-cover \
 	-coverpkg=./... \
@@ -31,7 +31,7 @@ unit-test:
 
 api-test:
 	@echo "Running api tests"
-	@$(GOTEST) -v ./test/... \
+	@$(GOTEST) -v ./test/ \
 	-count=1 \
 	-cover \
 	-coverpkg=./... \
