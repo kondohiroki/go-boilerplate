@@ -25,6 +25,10 @@ jobs:
             ${{ runner.os }}-go-
       - run: go mod download
       - run: make unit-test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: unit-test-coverage
+          path: unit-test-coverage.out
 
   api-test:
     name: Go API Test
@@ -58,3 +62,7 @@ jobs:
       - run: go mod download
       - run: go run main.go db:migrate --config=config/config.testing.yaml
       - run: make api-test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: api-test-coverage
+          path: api-test-coverage.out
