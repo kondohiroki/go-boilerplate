@@ -1,10 +1,12 @@
 name: Testing
+
 on:
   push:
     branches:
-      - main # or the name of your main branch
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
+
 jobs:
   unit-test:
     name: Go Unit Test
@@ -14,6 +16,13 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.x
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - run: go mod download
       - run: make unit-test
 
@@ -25,5 +34,12 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.x
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - run: go mod download
       - run: make api-test
