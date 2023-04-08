@@ -23,7 +23,7 @@ func NewUserHTTPHandler(service user.UserService) *UserHTTPHandler {
 func (h *UserHTTPHandler) GetUsers(c *fiber.Ctx) error {
 	dtos, err := h.service.GetUsers(c.Context())
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
+		return err
 	}
 
 	return c.JSON(response.CommonResponse{
@@ -36,13 +36,13 @@ func (h *UserHTTPHandler) GetUsers(c *fiber.Ctx) error {
 func (h *UserHTTPHandler) GetUserByID(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(http.StatusBadRequest).SendString("Invalid user ID")
+		return fiber.NewError(http.StatusBadRequest, "Invalid ID")
 	}
 
 	dti := user.GetUserDTI{ID: id}
 	dto, err := h.service.GetUserByID(c.Context(), dti)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
+		return err
 	}
 
 	return c.JSON(response.CommonResponse{
@@ -75,7 +75,7 @@ func (h *UserHTTPHandler) CreateUser(c *fiber.Ctx) error {
 	})
 
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).SendString("Internal Server Error")
+		return err
 	}
 
 	return c.JSON(response.CommonResponse{
