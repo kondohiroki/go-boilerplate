@@ -56,4 +56,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - run: go mod download
+      - run: go run main.go db:migrate
       - run: make api-test
