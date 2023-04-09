@@ -1,4 +1,4 @@
 package queue
 
 // Queue is a FIFO queue.
-// TODO: Implement redis BRPOPLPUSH.
+// Implement redis BRPOPLPUSH.
