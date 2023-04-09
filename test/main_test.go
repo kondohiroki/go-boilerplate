@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kondohiroki/go-boilerplate/config"
 	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
+	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/kondohiroki/go-boilerplate/internal/router"
 	"github.com/valyala/fasthttp"
@@ -44,6 +45,11 @@ func setup() {
 	println("setup database")
 	pgx.InitPgConnectionPool(config.GetConfig().Postgres)
 	println("setup database done")
+
+	// Set up redis
+	println("setup redis")
+	rdb.InitRedisClient(config.GetConfig().Redis)
+	println("setup redis done")
 
 	// migrate database
 	println("migrate database")
