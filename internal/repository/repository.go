@@ -1,15 +1,19 @@
 package repository
 
-import "github.com/kondohiroki/go-boilerplate/internal/db"
+import (
+	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
+	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
+)
 
 type Repository struct {
 	User UserRepository
 }
 
 func NewRepository() *Repository {
-	pgxPool := db.GetPgxPool()
+	pgxPool := pgx.GetPgxPool()
+	redisClient := rdb.GetRedisClient()
 
 	return &Repository{
-		User: NewUserRepository(pgxPool),
+		User: NewUserRepository(pgxPool, redisClient),
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/gavv/httpexpect/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/kondohiroki/go-boilerplate/config"
-	"github.com/kondohiroki/go-boilerplate/internal/db"
+	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/kondohiroki/go-boilerplate/internal/router"
 	"github.com/valyala/fasthttp"
@@ -42,7 +42,7 @@ func setup() {
 
 	// Set up database
 	println("setup database")
-	db.InitPgConnectionPool(config.GetConfig().Postgres)
+	pgx.InitPgConnectionPool(config.GetConfig().Postgres)
 	println("setup database done")
 
 	// migrate database

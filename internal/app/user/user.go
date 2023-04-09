@@ -34,7 +34,7 @@ type GetUserDTO struct {
 }
 
 func (s *userService) GetUsers(ctx context.Context) ([]GetUserDTO, error) {
-	users, err := s.Repo.User.GetUsersWithPagination(ctx, 10, 0)
+	users, err := s.Repo.User.GetUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,6 @@ type CreateUserDTO struct {
 }
 
 func (s *userService) CreateUser(ctx context.Context, input CreateUserDTI) (CreateUserDTO, error) {
-
 	id, err := s.Repo.User.AddUser(ctx, model.User{
 		Name:  input.Name,
 		Email: input.Email,

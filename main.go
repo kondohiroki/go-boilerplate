@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/kondohiroki/go-boilerplate/cmd"
-	"github.com/kondohiroki/go-boilerplate/internal/db"
+	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 )
 
@@ -18,7 +18,7 @@ func main() {
 
 		// Close the database connection pool
 		log.Default().Println("Closing database connection pool")
-		db.ClosePgxPool()
+		pgx.ClosePgxPool()
 
 		// Flush the log buffer
 		log.Default().Println("Flushing the log buffer")

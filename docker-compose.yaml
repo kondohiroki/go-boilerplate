@@ -17,6 +17,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  redis:
+    image: redis:6.2.6-alpine3.14
+    restart: on-failure
+    volumes:
+      - ../tmp/redis:/data
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
   # Uncomment this section if you want to use mongo
   # mongo:
   #   image: mongo:6.0.4-jammy

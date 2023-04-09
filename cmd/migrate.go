@@ -9,8 +9,8 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/kondohiroki/go-boilerplate/config"
-	"github.com/kondohiroki/go-boilerplate/internal/db"
 	"github.com/kondohiroki/go-boilerplate/internal/db/migrations"
+	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -40,7 +40,7 @@ var dbMigrateCommand = &cobra.Command{
 		ctx := context.Background()
 
 		// Get database connection
-		dbConn := db.GetPgxPool()
+		dbConn := pgx.GetPgxPool()
 
 		if dbConn == nil {
 			logger.Log.Error("Database connection is nil")
@@ -114,7 +114,7 @@ var dbMigrateFlushCommand = &cobra.Command{
 		ctx := context.Background()
 
 		// Get database connection
-		dbConn := db.GetPgxPool()
+		dbConn := pgx.GetPgxPool()
 
 		if dbConn == nil {
 			logger.Log.Error("Database connection is nil")

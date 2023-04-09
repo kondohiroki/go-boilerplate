@@ -9,7 +9,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/kondohiroki/go-boilerplate/config"
-	"github.com/kondohiroki/go-boilerplate/internal/db"
+	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
+	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,8 +22,8 @@ const defaultConfigFile = "config/config.yaml"
 var configFile string
 var rootCmd = &cobra.Command{
 	Use: func() string {
-		if nameForCLI := viper.GetString("app.nameForCLI"); nameForCLI != "" {
-			return nameForCLI
+		if nameSlug := viper.GetString("app.nameSlug"); nameSlug != "" {
+			return nameSlug
 		}
 		return "my-app"
 	}(),
@@ -38,6 +39,7 @@ func init() {
 		setUpConfig,
 		setUpLogger,
 		setUpPostgres,
+		setUpRedis,
 		setUpSentry,
 	)
 
@@ -77,15 +79,30 @@ func setUpPostgres() {
 		defer cancel()
 
 		logger.Log.Info("Initializing database schema", zap.String("schema", config.GetConfig().Postgres.Schema))
-		err := db.InitSchema(ctx, config.GetConfig().Postgres, config.GetConfig().Postgres.Schema)
+		err := pgx.InitSchema(ctx, config.GetConfig().Postgres, config.GetConfig().Postgres.Schema)
 		if err != nil {
-			logger.Log.Fatal("db.InitSchema()", zap.Error(err))
+			logger.Log.Fatal("pgx.InitSchema()", zap.Error(err))
 		}
 
-		err = db.InitPgConnectionPool(config.GetConfig().Postgres)
+		logger.Log.Info("Initializing pgxPool")
+		err = pgx.InitPgConnectionPool(config.GetConfig().Postgres)
 		if err != nil {
-			logger.Log.Fatal("db.InitPgConnectionPool()", zap.Error(err))
+			logger.Log.Fatal("pgx.InitPgConnectionPool()", zap.Error(err))
 		}
+		logger.Log.Info("pgxPool initialized")
+	}
+
+}
+
+func setUpRedis() {
+	// Create the database connection pool
+	if config.GetConfig().Redis.Host != "" {
+		logger.Log.Info("Initializing redis")
+		err := rdb.InitRedisClient(config.GetConfig().Redis)
+		if err != nil {
+			logger.Log.Fatal("rdb.InitRedisClient()", zap.Error(err))
+		}
+		logger.Log.Info("redis initialized")
 	}
 
 }

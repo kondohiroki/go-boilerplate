@@ -19,6 +19,7 @@ type Config struct {
 	Scheduler  Scheduler  `yaml:"scheduler"`
 	Schedules  []Schedule `yaml:"schedules"`
 	Postgres   Postgres   `yaml:"postgres"`
+	Redis      Redis      `yaml:"redis"`
 	Sentry     Sentry     `yaml:"sentry"`
 }
 
@@ -43,8 +44,8 @@ type Label struct {
 }
 
 type App struct {
-	Name       string `yaml:"name"`
-	NameForCLI string `yaml:"nameForCLI"`
+	Name     string `yaml:"name"`
+	NameSlug string `yaml:"nameSlug"`
 }
 
 type Postgres struct {
@@ -56,6 +57,13 @@ type Postgres struct {
 	Schema          string `yaml:"schema"`
 	MaxConnections  int32  `yaml:"maxConnections"`
 	MaxConnIdleTime int32  `yaml:"maxConnIdleTime"`
+}
+
+type Redis struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
+	Database int    `yaml:"database"`
 }
 
 type Sentry struct {

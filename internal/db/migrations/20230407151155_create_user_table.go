@@ -3,7 +3,7 @@ package migrations
 import (
 	"context"
 
-	"github.com/kondohiroki/go-boilerplate/internal/db"
+	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
 )
 
 func init() {
@@ -13,7 +13,7 @@ func init() {
 var createUserTable = &Migration{
 	Name: "20230407151155_create_user_table",
 	Up: func() error {
-		_, err := db.GetPgxPool().Exec(context.Background(), `
+		_, err := pgx.GetPgxPool().Exec(context.Background(), `
 			CREATE TABLE users (
 				id SERIAL PRIMARY KEY,
 				name VARCHAR(255) NOT NULL,
@@ -30,7 +30,7 @@ var createUserTable = &Migration{
 
 	},
 	Down: func() error {
-		_, err := db.GetPgxPool().Exec(context.Background(), `
+		_, err := pgx.GetPgxPool().Exec(context.Background(), `
 			// code here
 		`)
 		if err != nil {

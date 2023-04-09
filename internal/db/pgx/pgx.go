@@ -1,4 +1,4 @@
-package db
+package pgx
 
 import (
 	"context"
@@ -61,6 +61,7 @@ func GetPgxPool() *pgxpool.Pool {
 		if err != nil {
 			logger.Log.Error("Failed to initialize pgxPool", zap.Error(err))
 		}
+		logger.Log.Info("pgxPool initialized")
 	}
 
 	return pgxPool

@@ -1,7 +1,8 @@
 env: "dev" # dev, staging, production
 app:
+  key: "my_app_key"
   name: "My App"
-  nameForCLI: "my-app"
+  nameSlug: "my-app"
 
 httpServer:
   port: 8082
@@ -25,6 +26,12 @@ postgres:
   password: "my_password"
   maxConnections: 20
   maxIdleConnections: 10
+
+Redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
 
 sentry:
   dsn: ""
