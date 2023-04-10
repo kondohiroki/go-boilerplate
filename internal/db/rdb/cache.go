@@ -50,7 +50,7 @@ func Pull(ctx context.Context, key string) (string, error) {
 }
 
 // Forever sets the value of a key without an expiration time.
-func Forever(ctx context.Context, key string, value interface{}) error {
+func SetForever(ctx context.Context, key string, value interface{}) error {
 	key = addPrefix(key)
 	err := GetRedisClient().Set(ctx, key, value, 0).Err()
 	if err != nil {
@@ -59,8 +59,8 @@ func Forever(ctx context.Context, key string, value interface{}) error {
 	return nil
 }
 
-// Forget deletes the key-value pair from Redis.
-func Forget(ctx context.Context, key string) error {
+// Delete the key-value pair from Redis.
+func Remove(ctx context.Context, key string) error {
 	key = addPrefix(key)
 	_, err := GetRedisClient().Del(ctx, key).Result()
 	if err != nil {
@@ -69,6 +69,7 @@ func Forget(ctx context.Context, key string) error {
 	return nil
 }
 
+// Remove all keys from the current database.
 func Flush(ctx context.Context) error {
 	key := addPrefix("*")
 	_, err := GetRedisClient().Del(ctx, key).Result()

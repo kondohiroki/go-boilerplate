@@ -8,7 +8,6 @@ import (
 	"github.com/kondohiroki/go-boilerplate/config"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 )
 
 var rdb *redis.Client
@@ -35,15 +34,7 @@ func InitRedisClient(redisConfig config.Redis) error {
 
 func GetRedisClient() *redis.Client {
 	if rdb == nil {
-		m.Lock()
-		defer m.Unlock()
-
-		logger.Log.Info("Initializing redis again")
-		err := InitRedisClient(config.GetConfig().Redis)
-		if err != nil {
-			logger.Log.Error("Failed to initialize redis client", zap.Error(err))
-		}
-		logger.Log.Info("redis initialized")
+		logger.Log.Fatal("Redis client is not initialized")
 	}
 
 	return rdb

@@ -109,7 +109,7 @@ func (u *UserRepositoryImpl) AddUser(ctx context.Context, user model.User) (id i
 	}
 
 	// Delete cache
-	err = rdb.Forget(ctx, "users")
+	err = rdb.Remove(ctx, "users")
 
 	return id, nil
 }
