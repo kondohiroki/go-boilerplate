@@ -19,7 +19,6 @@ func NewUserHTTPHandler(service user.UserService) *UserHTTPHandler {
 	return &UserHTTPHandler{service: service}
 }
 
-// Write me GetUsers function
 func (h *UserHTTPHandler) GetUsers(c *fiber.Ctx) error {
 	dtos, err := h.service.GetUsers(c.Context())
 	if err != nil {
