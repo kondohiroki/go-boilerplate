@@ -60,6 +60,7 @@ This boilerplate is intended to be used as a starting point for a go application
 - [x] CLI with Cobra
 - [x] Scheduler with Cron
 - [x] PostgreSQL
+- [x] Redis Cache
 - [x] Docker
 - [x] Fiber Router 
 
@@ -69,6 +70,11 @@ This boilerplate is intended to be used as a starting point for a go application
   - [ ] gRPC API
 - [x] As a CLI Application
 - [x] As a Scheduler for Cron Jobs
+
+## Roadmap
+- [ ] Add gRPC API
+- [ ] Add Redis Reliable Queue
+- [ ] Document the code
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
