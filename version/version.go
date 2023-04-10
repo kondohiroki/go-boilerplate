@@ -1,5 +1,10 @@
 package version
 
+const (
+	// AppSemVer is app version.
+	AppSemVer = "0.0.2"
+)
+
 var (
 	// GitCommit is the current HEAD set using ldflags.
 	GitCommit string
@@ -13,8 +18,3 @@ func init() {
 		Version += "-" + GitCommit
 	}
 }
-
-const (
-	// AppSemVer is app version.
-	AppSemVer = "0.0.1"
-)

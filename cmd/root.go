@@ -31,7 +31,6 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, _ []string) {
 		cmd.Usage()
 	},
-	Version: "0.0.1",
 }
 
 func init() {
