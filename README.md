@@ -27,13 +27,25 @@ This boilerplate is intended to be used as a starting point for a go application
     ```sh
     docker compose up -d
     ```
-5. Run the application
+5. Migrate Database
+    ```sh
+    go run main.go db:migrate
+    ```
+6. Run the application
     ```sh
     # Run normally
     go run main.go serve-api
 
     # Run with hot reload
     air serve-api
+    ```
+7. Testing (optional)
+    ```sh
+    # Run unit-test
+    make unit-test
+
+    # Run api-test
+    make api-test
     ```
 
 ## How to Use
