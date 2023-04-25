@@ -34,7 +34,7 @@ services:
     build: .
     image: go-boilerplate:latest
     restart: on-failure:10
-    command: [ "db:migrate", "--config=/config/config.yaml" ]
+    command: [ "migrate", "--config=/config/config.yaml" ]
     volumes:
       - ./config/config.yaml:/config/config.yaml
     depends_on:

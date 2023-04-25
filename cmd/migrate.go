@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
-	"time"
 
-	"github.com/iancoleman/strcase"
 	"github.com/kondohiroki/go-boilerplate/config"
 	"github.com/kondohiroki/go-boilerplate/internal/db/migrations"
 	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
@@ -17,20 +14,23 @@ import (
 )
 
 func init() {
+	rootCmd.AddGroup(&cobra.Group{ID: "migrate", Title: "Migrate:"})
 	rootCmd.AddCommand(
 		dbMigrateCommand,
 		dbMigrateFlushCommand,
-		dbMigrateCreateCommand,
 	)
-
-	dbMigrateCreateCommand.Flags().StringP("name", "n", "", "(required) Migration name. for example: create_users_table")
-	dbMigrateCreateCommand.MarkFlagRequired("name")
 }
 
 var dbMigrateCommand = &cobra.Command{
-	Use:   "db:migrate",
-	Short: "Migrate database",
+	Use:     "migrate",
+	Short:   "Migrate database",
+	GroupID: "migrate",
 	Run: func(_ *cobra.Command, _ []string) {
+		// Setup all the required dependencies
+		setUpConfig()
+		setUpLogger()
+		setUpPostgres()
+
 		if len(migrations.Migrations) == 0 {
 			logger.Log.Info("No migrations found")
 			os.Exit(0)
@@ -107,9 +107,15 @@ var dbMigrateCommand = &cobra.Command{
 }
 
 var dbMigrateFlushCommand = &cobra.Command{
-	Use:   "db:migrate:flush",
-	Short: "Migrate database and drop all data",
+	Use:     "migrate:flush",
+	Short:   "Drop all tables in schema",
+	GroupID: "migrate",
 	Run: func(_ *cobra.Command, _ []string) {
+		// Setup all the required dependencies
+		setUpConfig()
+		setUpLogger()
+		setUpPostgres()
+
 		// Initiate context
 		ctx := context.Background()
 
@@ -135,44 +141,5 @@ var dbMigrateFlushCommand = &cobra.Command{
 		}
 
 		logger.Log.Info("Dropped all tables in schema " + config.GetConfig().Postgres.Schema + " successfully")
-	},
-}
-
-var dbMigrateCreateCommand = &cobra.Command{
-	Use:   "db:migrate:create",
-	Short: "Create a new migration file",
-	Run: func(cmd *cobra.Command, _ []string) {
-		migrationFileName, _ := cmd.Flags().GetString("name")
-
-		template := "pkg/template/migration_file.txt"
-
-		// make output with timestamp
-		outputFilename := time.Now().Format("20060102150405") + "_" + migrationFileName
-		outputPath := "internal/db/migrations/" + outputFilename + ".go"
-
-		// replace migration name
-		migrationName := strings.ReplaceAll(migrationFileName, "_", " ")
-		migrationName = strcase.ToLowerCamel(migrationName)
-
-		read, err := os.ReadFile(template)
-		if err != nil {
-			logger.Log.Error("Error reading template file", zap.Error(err))
-		}
-
-		newContents := strings.Replace(string(read), "<migration_name>", migrationName, -1)
-		newContents = strings.Replace(string(newContents), "<filename>", outputFilename, -1)
-
-		_, err = os.Create(outputPath)
-		if err != nil {
-			logger.Log.Error("Error creating file", zap.Error(err))
-		}
-
-		os.Chmod(outputPath, 0777)
-
-		err = os.WriteFile(outputPath, []byte(newContents), 0)
-		if err != nil {
-			logger.Log.Error("Error writing to file", zap.Error(err))
-		}
-
 	},
 }

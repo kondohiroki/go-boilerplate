@@ -13,8 +13,8 @@ func NewHealthzHTTPHandler() *HealthzHTTPHandler {
 
 func (h *HealthzHTTPHandler) Healthz(c *fiber.Ctx) error {
 	c.Status(200).JSON(response.CommonResponse{
-		Code:    0,
-		Message: "OK",
+		ResponseCode:    0,
+		ResponseMessage: "OK",
 	})
 
 	return nil

@@ -67,3 +67,7 @@ func GetValidationErrors(validationErrors validator.ValidationErrors) (errors []
 
 	return errors
 }
+
+func Translate(v validator.FieldError) string {
+	return v.Translate(trans)
+}

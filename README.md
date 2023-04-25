@@ -5,10 +5,18 @@
 
 This boilerplate is intended to be used as a starting point for a go application. It is not intended to be used as a but it is can be.
 
+<p align="center">
+<img src="https://user-images.githubusercontent.com/49369000/233607556-d81d6d06-9c67-4d45-8fd1-6038c549b4b9.png"  width="600" />
+</p>
+
 ## Getting Started
 ### Prerequisites
 -  Go 1.20
 -  Docker
+-  sonar-scanner - for coverage test in local
+   ```sh
+   brew install sonar-scanner
+   ```
 
 ### Installation
 1. Clone the repo
@@ -29,7 +37,7 @@ This boilerplate is intended to be used as a starting point for a go application
     ```
 5. Migrate Database
     ```sh
-    go run main.go db:migrate
+    go run main.go migrate
     ```
 6. Run the application
     ```sh
@@ -46,6 +54,36 @@ This boilerplate is intended to be used as a starting point for a go application
 
     # Run api-test
     make api-test
+
+    # Create sonar scret
+    touch .sonar.secret
+    echo "your-sonar-token" > .sonar.secret
+
+    # Add secret to .sonar.secret
+    # Get from sonar web
+    ```
+ 
+ ## Standard and Styles Guide
+
+ ### Coding Standard
+
+ 1. For those `const`, use capitalized SNAKE_CASE for public constant. For private, constant name should led by _ (underscore).
+
+    **Good Example**
+
+    ```go
+    // public
+    const BAD_REQUEST int = 400
+
+    // private
+    const _UNAUTHORIZED int = 401
+    ```
+
+    **Bad Example**
+
+    ```go
+    const BadRequest   int = 400
+    const unauthorized int = 401
     ```
 
 ## How to Use
@@ -75,6 +113,7 @@ This boilerplate is intended to be used as a starting point for a go application
 - [x] Redis Cache
 - [x] Docker
 - [x] Fiber Router 
+- [x] Add Redis Reliable Queue
 
 ## Use Cases
 - [x] As a Web Server
@@ -85,8 +124,5 @@ This boilerplate is intended to be used as a starting point for a go application
 
 ## Roadmap
 - [ ] Add gRPC API
-- [ ] Add Redis Reliable Queue
 - [ ] Document the code
 
-## License
-Distributed under the MIT License. See `LICENSE` for more information.

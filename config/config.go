@@ -83,6 +83,12 @@ type Schedule struct {
 	IsEnabled bool   `yaml:"isEnabled"`
 }
 
+type Authentication struct {
+	Endpoint string `yaml:"endpoint"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 func GetConfig() *Config {
 	return config
 }

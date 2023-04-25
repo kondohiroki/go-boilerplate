@@ -40,7 +40,7 @@ jobs:
           POSTGRES_PASSWORD: my_password
           POSTGRES_DB: my_db
         ports:
-          - 5432:5432
+          - 54321:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -49,7 +49,7 @@ jobs:
       redis:
         image: redis:latest
         ports:
-          - 6379:6379
+          - 63791:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -68,7 +68,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - run: go mod download
-      - run: go run main.go db:migrate --config=config/config.testing.yaml
+      - run: go run main.go migrate --config=config/config.testing.yaml
       - run: make api-test
       - uses: actions/upload-artifact@v3
         with:

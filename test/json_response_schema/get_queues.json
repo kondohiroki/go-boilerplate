@@ -1,0 +1,38 @@
+{
+    "type": "object",
+    "properties": {
+        "response_code": {
+            "type": "number"
+        },
+        "response_message": {
+            "type": "string"
+        },
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "key_without_prefix": {
+                        "type": "string"
+                    },
+                    "number_of_items": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "key",
+                    "key_without_prefix",
+                    "number_of_items"
+                ]
+            }
+        }
+    },
+    "required": [
+        "response_code",
+        "response_message",
+        "data"
+    ]
+}

@@ -1,6 +1,6 @@
 env: "dev" # dev, staging, production
 app:
-  key: "my_app_key"
+  key: "my-app-key"
   name: "My App"
   nameSlug: "my-app"
 
@@ -19,7 +19,7 @@ log:
 
 postgres:
   host: "localhost" # use "host.docker.internal" if you run app inside docker container
-  port: 5432
+  port: 54321
   database: "my_db"
   schema: "my_schema"
   username: "my_user"
@@ -29,7 +29,7 @@ postgres:
 
 Redis:
   host: "localhost"
-  port: 6379
+  port: 63791
   password: ""
   db: 0
 
