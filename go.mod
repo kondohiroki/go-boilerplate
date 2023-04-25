@@ -6,12 +6,12 @@ require (
 	github.com/bytedance/sonic v1.8.7
 	github.com/gavv/httpexpect/v2 v2.15.0
 	github.com/getsentry/sentry-go v0.20.0
-	github.com/go-co-op/gocron v1.19.0
+	github.com/go-co-op/gocron v1.23.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.12.0
 	github.com/gofiber/contrib/fibersentry v1.0.2
-	github.com/gofiber/fiber/v2 v2.43.0
+	github.com/gofiber/fiber/v2 v2.44.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
@@ -61,7 +61,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -95,7 +95,7 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
