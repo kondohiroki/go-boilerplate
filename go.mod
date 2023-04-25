@@ -16,7 +16,8 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/lnquy/cron v1.1.1
-	github.com/spf13/cobra v1.6.1
+	github.com/redis/go-redis/v9 v9.0.3
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/swag v1.8.12
@@ -67,7 +68,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/redis/go-redis/v9 v9.0.3 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sanity-io/litter v1.5.5 // indirect
