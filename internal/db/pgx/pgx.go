@@ -53,7 +53,15 @@ func InitPgConnectionPool(postgresConfig config.Postgres) error {
 
 func GetPgxPool() *pgxpool.Pool {
 	if pgxPool == nil {
-		logger.Log.Fatal("pgxPool is not initialized")
+		m.Lock()
+		defer m.Unlock()
+
+		logger.Log.Info("Initializing pgxPool again")
+		err := InitPgConnectionPool(config.GetConfig().Postgres)
+		if err != nil {
+			logger.Log.Error("Failed to initialize pgxPool", zap.Error(err))
+		}
+		logger.Log.Info("pgxPool initialized")
 	}
 
 	return pgxPool
@@ -87,13 +95,11 @@ func InitSchema(ctx context.Context, postgresConfig config.Postgres, schema stri
 	defer pgConn.Close(ctx)
 
 	// Create schema if it doesn't exist
-	_, err = pgConn.Exec(
+	// Ignore error if schema already exists or if the user doesn't have permission to create schema
+	pgConn.Exec(
 		ctx,
 		fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s`, schema),
 	)
-	if err != nil {
-		return err
-	}
 
 	// Set search path to schema so that we don't have to specify the schema name
 	_, err = pgConn.Exec(

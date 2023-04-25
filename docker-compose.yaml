@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: my_password
       POSTGRES_DB: my_db
     ports:
-      - 5432:5432
+      - 54322:5432
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "my_user", "-d", "my_db" ]
       interval: 5s
@@ -24,7 +24,7 @@ services:
     volumes:
       - ../tmp/redis:/data
     ports:
-      - 6379:6379
+      - 63799:6379
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s

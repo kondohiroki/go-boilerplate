@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "properties": {
+        "response_code": {
+            "type": "number"
+        },
+        "response_message": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "response_code",
+        "response_message"
+    ]
+}

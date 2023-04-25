@@ -1,0 +1,42 @@
+{
+    "type": "object",
+    "properties": {
+        "response_code": {
+            "type": "number"
+        },
+        "response_message": {
+            "type": "string"
+        },
+        "errors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "error_subcode": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "message",
+                    "type",
+                    "error_subcode"
+                ]
+            }
+        },
+        "request_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "response_code",
+        "response_message",
+        "errors",
+        "request_id"
+    ]
+}

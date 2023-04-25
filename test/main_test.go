@@ -21,10 +21,8 @@ var r *fiber.App
 // TestMain is the entry point for running tests
 func TestMain(m *testing.M) {
 	setup()
+	defer teardown()
 	exitCode := m.Run()
-	if exitCode == 0 {
-		teardown()
-	}
 	os.Exit(exitCode)
 }
 

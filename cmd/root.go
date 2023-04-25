@@ -13,36 +13,35 @@ import (
 	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
 const defaultConfigFile = "config/config.yaml"
 
+var RootCmdName = "main"
+
 var configFile string
 var rootCmd = &cobra.Command{
 	Use: func() string {
-		if nameSlug := viper.GetString("app.nameSlug"); nameSlug != "" {
-			return nameSlug
-		}
-		return "my-app"
+		return RootCmdName
 	}(),
-	Short: "Made with ❤️",
+	Short: "\nThis application is made with ❤️",
 	Run: func(cmd *cobra.Command, _ []string) {
 		cmd.Usage()
 	},
 }
 
 func init() {
-	cobra.OnInitialize(
-		setUpConfig,
-		setUpLogger,
-		setUpPostgres,
-		setUpRedis,
-		setUpSentry,
-	)
-
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", fmt.Sprintf("config file (default is %s)", defaultConfigFile))
+}
+
+func setupAll() {
+	setUpConfig()
+	setUpLogger()
+	setUpPostgres()
+	setUpRedis()
+	setUpSentry()
 }
 
 func Execute() {

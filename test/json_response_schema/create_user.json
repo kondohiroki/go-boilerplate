@@ -1,0 +1,27 @@
+{
+    "type": "object",
+    "properties": {
+        "response_code": {
+            "type": "number"
+        },
+        "response_message": {
+            "type": "string"
+        },
+        "data": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "id"
+            ]
+        }
+    },
+    "required": [
+        "response_code",
+        "response_message",
+        "data"
+    ]
+}

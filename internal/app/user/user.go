@@ -5,35 +5,36 @@ import (
 
 	"github.com/kondohiroki/go-boilerplate/internal/db/model"
 	"github.com/kondohiroki/go-boilerplate/internal/repository"
+	"github.com/kondohiroki/go-boilerplate/pkg/exception"
 )
 
-type UserService interface {
+type UserApp interface {
 	GetUsers(ctx context.Context) ([]GetUserDTO, error)
 	GetUserByID(ctx context.Context, input GetUserDTI) (GetUserDTO, error)
 	CreateUser(ctx context.Context, input CreateUserDTI) (CreateUserDTO, error)
 }
 
-type userService struct {
+type userApp struct {
 	Repo repository.Repository
 }
 
-func NewUserService() UserService {
-	return &userService{
+func NewUserApp() UserApp {
+	return &userApp{
 		Repo: *repository.NewRepository(),
 	}
 }
 
 type GetUserDTI struct {
-	ID int
+	ID string
 }
 
 type GetUserDTO struct {
-	ID    int    `json:"id"`
+	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
-func (s *userService) GetUsers(ctx context.Context) ([]GetUserDTO, error) {
+func (s *userApp) GetUsers(ctx context.Context) ([]GetUserDTO, error) {
 	users, err := s.Repo.User.GetUsers(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +52,7 @@ func (s *userService) GetUsers(ctx context.Context) ([]GetUserDTO, error) {
 	return usersDTO, nil
 }
 
-func (s *userService) GetUserByID(ctx context.Context, input GetUserDTI) (GetUserDTO, error) {
+func (s *userApp) GetUserByID(ctx context.Context, input GetUserDTI) (GetUserDTO, error) {
 	// Replace with actual logic to retrieve the user from the database.
 	return GetUserDTO{
 		ID:    input.ID,
@@ -69,7 +70,16 @@ type CreateUserDTO struct {
 	ID int `json:"id"`
 }
 
-func (s *userService) CreateUser(ctx context.Context, input CreateUserDTI) (CreateUserDTO, error) {
+func (s *userApp) CreateUser(ctx context.Context, input CreateUserDTI) (CreateUserDTO, error) {
+	// Ensure email is not already taken
+	isUserEmailExist, err := s.Repo.User.IsUserEmailExist(ctx, input.Email)
+	if err != nil {
+		return CreateUserDTO{}, err
+	}
+	if isUserEmailExist {
+		return CreateUserDTO{}, exception.UserEmailAlreadyTakenError
+	}
+
 	id, err := s.Repo.User.AddUser(ctx, model.User{
 		Name:  input.Name,
 		Email: input.Email,

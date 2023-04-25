@@ -17,13 +17,18 @@ import (
 )
 
 func init() {
+	rootCmd.AddGroup(&cobra.Group{ID: "serve", Title: "Serve:"})
 	rootCmd.AddCommand(serveAPICmd)
 }
 
 var serveAPICmd = &cobra.Command{
-	Use:   "serve-api",
-	Short: "Start the RESTful API",
+	Use:     "serve-api",
+	Short:   "Start the RESTful API",
+	GroupID: "serve",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Setup all the required dependencies
+		setupAll()
+
 		// Create http router
 		r := router.NewFiberRouter()
 

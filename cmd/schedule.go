@@ -11,6 +11,7 @@ import (
 )
 
 func init() {
+	rootCmd.AddGroup(&cobra.Group{ID: "schedule", Title: "Schedule:"})
 	rootCmd.AddCommand(
 		listScheduleCommand,
 		startScheduleCommand,
@@ -18,18 +19,26 @@ func init() {
 }
 
 var startScheduleCommand = &cobra.Command{
-	Use:   "schedule:run",
-	Short: "Start schedule job",
+	Use:     "schedule:run",
+	Short:   "Start schedule job",
+	GroupID: "schedule",
 	Run: func(_ *cobra.Command, _ []string) {
+		// Setup all the required dependencies
+		setupAll()
+
 		printScheduleList()
 		scheduler.Start()
 	},
 }
 
 var listScheduleCommand = &cobra.Command{
-	Use:   "schedule:list",
-	Short: "List all schedule jobs",
+	Use:     "schedule:list",
+	Short:   "List all schedule jobs",
+	GroupID: "schedule",
 	Run: func(_ *cobra.Command, _ []string) {
+		// Setup all the required dependencies
+		setUpConfig()
+		setUpLogger()
 
 		printScheduleList()
 

@@ -1,22 +1,17 @@
-package rdb
+package cache
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/kondohiroki/go-boilerplate/config"
+	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
 )
-
-func addPrefix(key string) string {
-	prefix := config.GetConfig().App.NameSlug
-	return fmt.Sprintf("%s_%s", prefix, key)
-}
 
 // Set sets a key-value pair with an expiration time.
 func Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	key = addPrefix(key)
-	err := GetRedisClient().Set(ctx, key, value, expiration).Err()
+	key = rdb.AddPrefix(key)
+	err := rdb.GetRedisClient().Set(ctx, key, value, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set key %s: %w", key, err)
 	}
@@ -25,8 +20,8 @@ func Set(ctx context.Context, key string, value interface{}, expiration time.Dur
 
 // Get retrieves the value of a key from Redis.
 func Get(ctx context.Context, key string) (string, error) {
-	key = addPrefix(key)
-	val, err := GetRedisClient().Get(ctx, key).Result()
+	key = rdb.AddPrefix(key)
+	val, err := rdb.GetRedisClient().Get(ctx, key).Result()
 	if err != nil {
 		return "", fmt.Errorf("failed to get key %s: %w", key, err)
 	}
@@ -35,13 +30,13 @@ func Get(ctx context.Context, key string) (string, error) {
 
 // Pull retrieves the value of a key from Redis and then deletes the key-value pair.
 func Pull(ctx context.Context, key string) (string, error) {
-	key = addPrefix(key)
-	val, err := GetRedisClient().Get(ctx, key).Result()
+	key = rdb.AddPrefix(key)
+	val, err := rdb.GetRedisClient().Get(ctx, key).Result()
 	if err != nil {
 		return "", fmt.Errorf("failed to get key %s: %w", key, err)
 	}
 
-	_, delErr := GetRedisClient().Del(ctx, key).Result()
+	_, delErr := rdb.GetRedisClient().Del(ctx, key).Result()
 	if delErr != nil {
 		return "", fmt.Errorf("failed to delete key %s: %w", key, delErr)
 	}
@@ -51,8 +46,8 @@ func Pull(ctx context.Context, key string) (string, error) {
 
 // Forever sets the value of a key without an expiration time.
 func SetForever(ctx context.Context, key string, value interface{}) error {
-	key = addPrefix(key)
-	err := GetRedisClient().Set(ctx, key, value, 0).Err()
+	key = rdb.AddPrefix(key)
+	err := rdb.GetRedisClient().Set(ctx, key, value, 0).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set key %s forever: %w", key, err)
 	}
@@ -61,8 +56,8 @@ func SetForever(ctx context.Context, key string, value interface{}) error {
 
 // Delete the key-value pair from Redis.
 func Remove(ctx context.Context, key string) error {
-	key = addPrefix(key)
-	_, err := GetRedisClient().Del(ctx, key).Result()
+	key = rdb.AddPrefix(key)
+	_, err := rdb.GetRedisClient().Del(ctx, key).Result()
 	if err != nil {
 		return fmt.Errorf("failed to forget key %s: %w", key, err)
 	}
@@ -71,8 +66,8 @@ func Remove(ctx context.Context, key string) error {
 
 // Remove all keys from the current database.
 func Flush(ctx context.Context) error {
-	key := addPrefix("*")
-	_, err := GetRedisClient().Del(ctx, key).Result()
+	key := rdb.AddPrefix("*")
+	_, err := rdb.GetRedisClient().Del(ctx, key).Result()
 	if err != nil {
 		return err
 	}
@@ -82,8 +77,8 @@ func Flush(ctx context.Context) error {
 // Increment increases the integer value of a key by the given increment.
 // If the key does not exist, it is set to 0 before performing the operation.
 func Increment(ctx context.Context, key string, increment int64) (int64, error) {
-	key = addPrefix(key)
-	val, err := GetRedisClient().IncrBy(ctx, key, increment).Result()
+	key = rdb.AddPrefix(key)
+	val, err := rdb.GetRedisClient().IncrBy(ctx, key, increment).Result()
 	if err != nil {
 		return 0, fmt.Errorf("failed to increment key %s by %d: %w", key, increment, err)
 	}
@@ -93,8 +88,8 @@ func Increment(ctx context.Context, key string, increment int64) (int64, error) 
 // Decrement decreases the integer value of a key by the given decrement.
 // If the key does not exist, it is set to 0 before performing the operation.
 func Decrement(ctx context.Context, key string, decrement int64) (int64, error) {
-	key = addPrefix(key)
-	val, err := GetRedisClient().DecrBy(ctx, key, decrement).Result()
+	key = rdb.AddPrefix(key)
+	val, err := rdb.GetRedisClient().DecrBy(ctx, key, decrement).Result()
 	if err != nil {
 		return 0, fmt.Errorf("failed to decrement key %s by %d: %w", key, decrement, err)
 	}

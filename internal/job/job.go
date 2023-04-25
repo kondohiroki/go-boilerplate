@@ -1,95 +1,45 @@
 package job
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"strconv"
+	"encoding/json"
 	"time"
 
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
-	"github.com/kondohiroki/go-boilerplate/internal/repository"
+	"github.com/google/uuid"
 )
 
-type JobStatus string
-
-const (
-	JOB_PENDING         JobStatus = "PENDING"
-	JOB_IN_PROGRESS     JobStatus = "IN PROGRESS"
-	JOB_SUCCESS         JobStatus = "SUCCESS"
-	JOB_FAILED          JobStatus = "FAILED"
-	JOB_NOTHING_CHANGED JobStatus = "NOTHING CHANGED"
-)
-
-type JobFunc func(ctx context.Context) (JobStatus, time.Time, int64, error)
-
-type JobChain struct {
-	JobName string
-	JobFunc JobFunc
+type JobHandler interface {
+	Handle() error
 }
 
-type JobContext struct {
-	Ctx  context.Context
-	Repo *repository.Repository
+// Job represents a job in the queue with a unique ID, queue name, payload, and creation timestamp.
+type Job struct {
+	ID          uuid.UUID       `json:"id"`
+	HandlerName string          `json:"handlerName"`
+	Payload     json.RawMessage `json:"payload"`
+	CreatedAt   time.Time       `json:"created_at"`
+	MaxAttempts int             `json:"max_attempts"`
+	Attempts    int             `json:"attempts"`
+	Delay       time.Duration   `json:"delay"`
+	Errors      []string        `json:"errors"`
 }
 
-type JobReport struct {
-	JobName       string
-	Status        JobStatus
-	Error         error
-	StartedTime   time.Time
-	ExecutionTime int64
-}
+// NewJob creates a new Job with the given queue name and payload.
+func NewJob(handlerName string, payload any, maxAttempts int, delay time.Duration) (*Job, error) {
+	jobID := uuid.New()
+	createdAt := time.Now()
 
-func NewJobContext() *JobContext {
-	return &JobContext{
-		Ctx:  context.Background(),
-		Repo: repository.NewRepository(),
-	}
-}
-
-func PrintJobReport(jobReports []JobReport) {
-	// Define the color for each status value
-	var statusColors = map[JobStatus]text.Colors{
-		JOB_PENDING:         {text.FgBlue},
-		JOB_IN_PROGRESS:     {text.FgYellow},
-		JOB_SUCCESS:         {text.FgGreen},
-		JOB_FAILED:          {text.FgRed},
-		JOB_NOTHING_CHANGED: {text.FgGreen},
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
 	}
 
-	tableWriter := table.NewWriter()
-	tableWriter.SetOutputMirror(os.Stdout)
-	tableWriter.AppendHeader(table.Row{"No.", "Job Name", "Status", "Error", "Started Time", "Execution Time"})
-	tableWriter.SetColumnConfigs([]table.ColumnConfig{
-		{Name: "No.", AlignHeader: text.AlignCenter, Align: text.AlignLeft},
-		{Name: "Job Name", AlignHeader: text.AlignCenter, Align: text.AlignLeft},
-		{Name: "Status", AlignHeader: text.AlignCenter, Align: text.AlignLeft},
-		{Name: "Error", AlignHeader: text.AlignCenter, Align: text.AlignLeft},
-		{Name: "Started Time", AlignHeader: text.AlignCenter, Align: text.AlignLeft},
-		{Name: "Execution Time", AlignHeader: text.AlignCenter, Align: text.AlignLeft},
-	})
-
-	for index, jobReport := range jobReports {
-		rowColor := statusColors[jobReport.Status]
-		var errorMsg any
-		if jobReport.Error != nil {
-			errorMsg = jobReport.Error
-		} else {
-			errorMsg = "-"
-		}
-
-		row := table.Row{
-			strconv.Itoa(index + 1),
-			jobReport.JobName,
-			rowColor.Sprint(jobReport.Status),
-			errorMsg,
-			jobReport.StartedTime.Format(time.RFC822),
-			fmt.Sprintf("%dms", jobReport.ExecutionTime),
-		}
-		tableWriter.AppendRow(row)
-	}
-
-	tableWriter.Render()
+	return &Job{
+		ID:          jobID,
+		HandlerName: handlerName,
+		Payload:     payloadBytes,
+		MaxAttempts: maxAttempts,
+		Attempts:    0,
+		Delay:       delay,
+		CreatedAt:   createdAt,
+	}, nil
 }

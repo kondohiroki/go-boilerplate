@@ -3,62 +3,32 @@ package error
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/kondohiroki/go-boilerplate/internal/interface/response"
+	"github.com/kondohiroki/go-boilerplate/pkg/exception"
 )
 
 // Centralized error handler for all routes
 func ErrorHandler(c *fiber.Ctx, err error) error {
+	// Retrieve neccessary details
 	// Status code defaults to 500
-	code := fiber.StatusInternalServerError
-
-	// Retrieve request id
+	responseCode := fiber.StatusInternalServerError
+	responseMessage := err.Error()
 	requestID := c.Locals("requestid").(string)
 
-	// Retrieve the custom status code if it's an fiber.*Error
-	if e, ok := err.(*fiber.Error); ok {
-		code = e.Code
-	}
+	var cErrs *exception.ExceptionErrors
 
-	// Retrieve the errors from the context
-	errors := c.Locals("errors")
-
-	// Handle 400 error
-	// if code == fiber.StatusBadRequest {}
-
-	// Handle 401 error
-	// if code == fiber.StatusUnauthorized {}
-
-	// Handle 403 error
-	// if code == fiber.StatusForbidden {}
-
-	// Handle 404 error
-	if code == fiber.StatusNotFound {
-		return c.Status(fiber.StatusNotFound).JSON(
-			&response.CommonResponse{
-				Code:      fiber.StatusNotFound,
-				Message:   err.Error(),
-				RequestID: requestID,
-			},
-		)
-	}
-
-	// Handle 422 error
-	if code == fiber.StatusUnprocessableEntity {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(
-			&response.CommonResponse{
-				Code:      fiber.StatusUnprocessableEntity,
-				Message:   err.Error(),
-				Errors:    errors,
-				RequestID: requestID,
-			},
-		)
+	// Use response code from ExceptionError
+	cErrs, ok := err.(*exception.ExceptionErrors)
+	if ok {
+		responseCode = cErrs.HttpStatusCode
 	}
 
 	// Handle 500 error
-	return c.Status(fiber.StatusInternalServerError).JSON(
+	return c.Status(responseCode).JSON(
 		&response.CommonResponse{
-			Code:      code,
-			Message:   err.Error(),
-			RequestID: requestID,
+			ResponseCode:    responseCode,
+			ResponseMessage: responseMessage,
+			Errors:          cErrs,
+			RequestID:       requestID,
 		},
 	)
 }
