@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.21.0
-	github.com/bytedance/sonic v1.8.7
+	github.com/bytedance/sonic v1.8.8
 	github.com/gavv/httpexpect/v2 v2.15.0
 	github.com/getsentry/sentry-go v0.20.0
 	github.com/go-co-op/gocron v1.23.0
