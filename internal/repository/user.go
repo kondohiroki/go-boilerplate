@@ -19,10 +19,10 @@ type UserRepository interface {
 
 type UserRepositoryImpl struct {
 	pgxPool     *pgxpool.Pool
-	redisClient *redis.Client
+	redisClient redis.Cmdable
 }
 
-func NewUserRepository(pgxPool *pgxpool.Pool, redisClient *redis.Client) UserRepository {
+func NewUserRepository(pgxPool *pgxpool.Pool, redisClient redis.Cmdable) UserRepository {
 	return &UserRepositoryImpl{
 		pgxPool:     pgxPool,
 		redisClient: redisClient,
@@ -68,6 +68,27 @@ func (u *UserRepositoryImpl) GetUsers(ctx context.Context) ([]model.User, error)
 		return nil, err
 	}
 
+	return users, nil
+}
+
+// Work in progress
+//
+//cov:ignore
+func (u *UserRepositoryImpl) GetUsersWithPagination(ctx context.Context, limit int, offset int) ([]model.User, error) {
+	var users []model.User
+	rows, err := u.pgxPool.Query(ctx, "SELECT id, name, email FROM users LIMIT $1 OFFSET $2", limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var user model.User
+		err = rows.Scan(&user.ID, &user.Name, &user.Email)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
 	return users, nil
 }
 

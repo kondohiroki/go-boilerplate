@@ -15,12 +15,12 @@ type UserApp interface {
 }
 
 type userApp struct {
-	Repo repository.Repository
+	Repo *repository.Repository
 }
 
-func NewUserApp() UserApp {
+func NewUserApp(repo *repository.Repository) UserApp {
 	return &userApp{
-		Repo: *repository.NewRepository(),
+		Repo: repo,
 	}
 }
 

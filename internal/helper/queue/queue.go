@@ -3,13 +3,16 @@ package queue
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
+	"github.com/kondohiroki/go-boilerplate/internal/db/model"
 	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
 	"github.com/kondohiroki/go-boilerplate/internal/job"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
+	"github.com/kondohiroki/go-boilerplate/internal/repository"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -22,6 +25,8 @@ Implement redis BLMOVE with the RIGHT and LEFT arguments.
 type Queue struct {
 	Key              string
 	KeyWithoutPrefix string
+
+	repo *repository.Repository
 }
 
 // QueueInfo holds information about a specific queue.
@@ -35,21 +40,103 @@ func NewQueue(key string) *Queue {
 	return &Queue{
 		Key:              rdb.AddQueuePrefix(key),
 		KeyWithoutPrefix: key,
+		repo:             repository.NewRepository(),
 	}
 }
 
 // Adds an item to the source list (the end of the queue).
-func (q *Queue) Enqueue(jobs ...*job.Job) error {
+func (q *Queue) Enqueue(ctx context.Context, jobs ...*job.Job) error {
 	rdbClient := rdb.GetRedisClient()
 
-	for _, job := range jobs {
-		jobBytes, err := sonic.Marshal(job)
+	for _, j := range jobs {
+		jobBytes, err := sonic.Marshal(j)
 		if err != nil {
 			return err
 		}
 
-		err = rdbClient.LPush(context.Background(), q.Key, jobBytes).Err()
+		// Add job to postgres for backup
+		_, err = q.repo.Job.AddJob(ctx, model.Job{
+			ID:          j.ID,
+			Queue:       q.KeyWithoutPrefix,
+			HandlerName: j.HandlerName,
+			Payload:     j.Payload,
+			MaxAttempts: j.MaxAttempts,
+			Delay:       j.Delay,
+			Status:      job.StatusPending,
+			CreatedAt:   j.CreatedAt,
+		})
 		if err != nil {
+			logger.Log.Error("Error adding job to postgres", zap.Error(err))
+			return err
+		}
+
+		// Add job to redis
+		err = rdbClient.LPush(ctx, q.Key, jobBytes).Err()
+		if err != nil {
+			return err
+		}
+
+		if err != nil {
+			logger.Log.Error("Error adding job to redis", zap.Error(err))
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Restore pending jobs from postgres to redis.
+func (q *Queue) EnqueuePendingJobs(ctx context.Context, jobs ...*job.Job) error {
+	rdbClient := rdb.GetRedisClient()
+
+	for _, j := range jobs {
+		jobBytes, err := sonic.Marshal(j)
+		if err != nil {
+			return err
+		}
+		if err != nil {
+			logger.Log.Error("Error adding job to postgres", zap.Error(err))
+			return err
+		}
+
+		// Add job to redis
+		err = rdbClient.LPush(ctx, q.Key, jobBytes).Err()
+		if err != nil {
+			return err
+		}
+
+		if err != nil {
+			logger.Log.Error("Error adding job to redis", zap.Error(err))
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Restore failed jobs from postgres to redis.
+func (q *Queue) EnqueueFailedJobs(ctx context.Context, jobs ...*job.Job) error {
+	rdbClient := rdb.GetRedisClient()
+
+	for _, j := range jobs {
+		jobBytes, err := sonic.Marshal(j)
+		if err != nil {
+			return err
+		}
+
+		if err != nil {
+			logger.Log.Error("Error adding job to postgres", zap.Error(err))
+			return err
+		}
+
+		// Add job to redis
+		err = rdbClient.LPush(ctx, q.Key+"_failed", jobBytes).Err()
+		if err != nil {
+			return err
+		}
+
+		if err != nil {
+			logger.Log.Error("Error adding job to redis", zap.Error(err))
 			return err
 		}
 	}
@@ -58,12 +145,13 @@ func (q *Queue) Enqueue(jobs ...*job.Job) error {
 }
 
 // Removes an item from the source list (the start of the queue) and adds it to the destkey list (temporary storage location).
-func (q *Queue) Dequeue(timeout time.Duration) (*job.Job, error) {
+func (q *Queue) Dequeue(ctx context.Context, timeout time.Duration) (*job.Job, error) {
 	sourceKey := q.Key
-	destKey := q.Key + "_tmp"
+	destKey := q.Key + "_attempt"
 	rdbClient := rdb.GetRedisClient()
 
-	result, err := rdbClient.BLMove(context.Background(), sourceKey, destKey, "RIGHT", "LEFT", timeout).Result()
+	// Move the job from the source list to the temporary list
+	result, err := rdbClient.BLMove(ctx, sourceKey, destKey, "RIGHT", "LEFT", timeout).Result()
 
 	if err == redis.Nil {
 		return nil, nil
@@ -73,64 +161,79 @@ func (q *Queue) Dequeue(timeout time.Duration) (*job.Job, error) {
 		return nil, err
 	}
 
-	var job job.Job
-	err = sonic.Unmarshal([]byte(result), &job)
+	var j job.Job
+	err = sonic.Unmarshal([]byte(result), &j)
 	if err != nil {
 		return nil, err
 	}
 
+	// Update status of job in postgres
+	if err := q.repo.Job.UpdateJobStatus(ctx, j.ID, job.StatusProcessing); err != nil {
+		logger.Log.Error("Error updating job status in postgres", zap.Error(err))
+		return nil, err
+	}
+
 	// Check if the job has reached the maximum number of attempts
-	if job.MaxAttempts > 0 && job.Attempts >= job.MaxAttempts {
+	if j.MaxAttempts > 0 && j.Attempts >= j.MaxAttempts {
 		// Remove the job from the temporary list, it has reached the maximum number of attempts
-		_, _ = rdbClient.LRem(context.Background(), destKey, 1, result).Result()
-		return nil, fmt.Errorf("job %s reached the maximum number of attempts (%d)", job.ID, job.MaxAttempts)
+		_, _ = rdbClient.LRem(ctx, destKey, 1, result).Result()
+		return nil, fmt.Errorf("job %s reached the maximum number of attempts (%d)", j.ID, j.MaxAttempts)
 	}
 
 	// Increment the number of attempts and update the job in the temporary list
-	job.Attempts++
-	jobBytes, err := sonic.Marshal(&job)
+	j.Attempts++
+	jobBytes, err := sonic.Marshal(&j)
 	if err != nil {
 		return nil, err
 	}
 
 	// Remove the job from the temporary list
-	_, err = rdbClient.LRem(context.Background(), destKey, 1, result).Result()
+	_, err = rdbClient.LRem(ctx, destKey, 1, result).Result()
 	if err != nil {
 		return nil, err
 	}
 
 	// Add the updated job to the temporary list
-	err = rdbClient.LPush(context.Background(), destKey, jobBytes).Err()
+	err = rdbClient.LPush(ctx, destKey, jobBytes).Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return &job, nil
+	return &j, nil
 }
 
 // Removes the processed item with the given job ID from the destkey list (temporary storage location).
-func (q *Queue) RemoveProcessed(jobID uuid.UUID, jobError error) error {
-	destKey := q.Key + "_tmp"
+func (q *Queue) RemoveProcessed(ctx context.Context, jobID uuid.UUID, jobError error) error {
+	destKey := q.Key + "_attempt"
 	sourceKey := q.Key
 	failedJobsKey := q.Key + "_failed"
 	rdbClient := rdb.GetRedisClient()
 
-	queues := rdbClient.LRange(context.Background(), destKey, 0, -1)
+	queues := rdbClient.LRange(ctx, destKey, 0, -1)
 	for _, queueItem := range queues.Val() {
-		var job job.Job
-		if err := sonic.Unmarshal([]byte(queueItem), &job); err != nil {
+		var j job.Job
+		if err := sonic.Unmarshal([]byte(queueItem), &j); err != nil {
 			return err
 		}
 
-		if job.ID == jobID {
-			if err := removeJobFromList(rdbClient, destKey, queueItem); err != nil {
+		if j.ID == jobID {
+			// Remove the job from the temporary list
+			if err := removeJobFromList(ctx, rdbClient, destKey, queueItem); err != nil {
 				return err
 			}
 
+			// if the job failed, add it to the failed_jobs list
 			if jobError != nil {
-				job.Errors = append(job.Errors, jobError.Error())
-				return handleFailedJob(rdbClient, job, sourceKey, failedJobsKey)
+				j.Errors = append(j.Errors, jobError.Error())
+				return handleFailedJob(ctx, rdbClient, q.KeyWithoutPrefix, q.repo, j, sourceKey, failedJobsKey)
 			}
+
+			// if the job was successful, then update the job status to completed in postgres
+			if err := q.repo.Job.UpdateJobStatus(ctx, j.ID, job.StatusCompleted); err != nil {
+				logger.Log.Error("Error updating job status in postgres", zap.Error(err))
+				return err
+			}
+
 			break
 		}
 	}
@@ -139,40 +242,68 @@ func (q *Queue) RemoveProcessed(jobID uuid.UUID, jobError error) error {
 }
 
 // Remove the job from the temporary list if it was processed successfully
-func removeJobFromList(rdbClient *redis.Client, destKey string, queueItem string) error {
-	if _, err := rdbClient.LRem(context.Background(), destKey, 1, queueItem).Result(); err != nil {
+func removeJobFromList(ctx context.Context, rdbClient redis.Cmdable, destKey string, queueItem string) error {
+	// Remove the job from the temporary list
+	if _, err := rdbClient.LRem(ctx, destKey, 1, queueItem).Result(); err != nil {
 		return err
 	}
 	return nil
 }
 
 // If the job failed, add it to the failed_jobs list
-func handleFailedJob(rdbClient *redis.Client, job job.Job, sourceKey string, failedJobsKey string) error {
-	if job.MaxAttempts == 0 || job.Attempts < job.MaxAttempts {
-		time.Sleep(job.Delay)
-		jobBytes, err := sonic.Marshal(&job)
+func handleFailedJob(ctx context.Context, rdbClient redis.Cmdable, queue string, repo *repository.Repository, j job.Job, sourceKey string, failedJobsKey string) error {
+	if j.MaxAttempts == 0 || j.Attempts < j.MaxAttempts {
+		time.Sleep(time.Duration(j.Delay) * time.Second)
+		jobBytes, err := sonic.Marshal(&j)
 		if err != nil {
 			return err
 		}
-		err = rdbClient.LPush(context.Background(), sourceKey, jobBytes).Err()
+
+		// Update job status in postgres
+		if err := repo.Job.UpdateJobStatus(ctx, j.ID, job.StatusPending); err != nil {
+			logger.Log.Error("Error updating job status in postgres", zap.Error(err))
+			return err
+		}
+
+		// Add the job back to the source list (the beginning of the queue) with the delay
+		err = rdbClient.LPush(ctx, sourceKey, jobBytes).Err()
 		if err != nil {
 			return err
 		}
 	} else {
-		if err := addJobToFailedList(rdbClient, job, failedJobsKey); err != nil {
+		// update job status in postgres
+		if err := repo.Job.UpdateJobStatus(ctx, j.ID, job.StatusFailed); err != nil {
+			logger.Log.Error("Error updating job status in postgres", zap.Error(err))
+			return err
+		}
+
+		// Add failed job to postgres
+		_, err := repo.Job.AddFailedJob(ctx, model.FaildJob{
+			JobID:    j.ID,
+			Queue:    queue,
+			Payload:  j.Payload,
+			Error:    strings.Join(j.Errors, ","),
+			FailedAt: time.Now(),
+		})
+		if err != nil {
+			logger.Log.Error("Error adding failed job to postgres", zap.Error(err))
+			return err
+		}
+
+		if err := addJobToFailedList(ctx, rdbClient, j, failedJobsKey); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func addJobToFailedList(rdbClient *redis.Client, job job.Job, failedJobsKey string) error {
+func addJobToFailedList(ctx context.Context, rdbClient redis.Cmdable, job job.Job, failedJobsKey string) error {
 	logger.Log.Info("Job has reached the maximum number of attempts. It will be added to the failed_jobs list", zap.String("job_id", job.ID.String()))
 	jobBytes, err := sonic.Marshal(&job)
 	if err != nil {
 		return err
 	}
-	err = rdbClient.LPush(context.Background(), failedJobsKey, jobBytes).Err()
+	err = rdbClient.LPush(ctx, failedJobsKey, jobBytes).Err()
 	if err != nil {
 		return err
 	}
@@ -180,17 +311,17 @@ func addJobToFailedList(rdbClient *redis.Client, job job.Job, failedJobsKey stri
 }
 
 // RetryFailedByJobID moves a failed item with the given job ID from the destkey list back to the source list for retrying.
-func (q *Queue) RetryFailedByJobID(jobID uuid.UUID) error {
+func (q *Queue) RetryFailedByJobID(ctx context.Context, jobID uuid.UUID) error {
 	failedJobsKey := q.Key + "_failed"
 	destkey := q.Key
 	rdbClient := rdb.GetRedisClient()
 
-	queues, err := rdbClient.LRange(context.Background(), failedJobsKey, 0, -1).Result()
+	queues, err := rdbClient.LRange(ctx, failedJobsKey, 0, -1).Result()
 	if err != nil {
 		return err
 	}
 
-	found, err := findAndRetryJob(rdbClient, queues, jobID, failedJobsKey, destkey)
+	found, err := findAndRetryJob(ctx, rdbClient, queues, jobID, failedJobsKey, destkey)
 	if err != nil {
 		return err
 	}
@@ -199,10 +330,22 @@ func (q *Queue) RetryFailedByJobID(jobID uuid.UUID) error {
 		return fmt.Errorf("job with ID %s not found in temporary list", jobID)
 	}
 
+	// update job status in postgres
+	if err := q.repo.Job.UpdateJobStatus(ctx, jobID, job.StatusPending); err != nil {
+		logger.Log.Error("Error updating job status in postgres", zap.Error(err))
+		return err
+	}
+
+	// remove job from failed_jobs in postgres
+	if err := q.repo.Job.RemoveFailedJob(ctx, jobID); err != nil {
+		logger.Log.Error("Error removing job from failed_jobs in postgres", zap.Error(err))
+		return err
+	}
+
 	return nil
 }
 
-func findAndRetryJob(rdbClient *redis.Client, queues []string, jobID uuid.UUID, failedJobsKey, destkey string) (bool, error) {
+func findAndRetryJob(ctx context.Context, rdbClient redis.Cmdable, queues []string, jobID uuid.UUID, failedJobsKey, destkey string) (bool, error) {
 	for _, failedItem := range queues {
 		var job job.Job
 		if err := sonic.Unmarshal([]byte(failedItem), &job); err != nil {
@@ -210,7 +353,7 @@ func findAndRetryJob(rdbClient *redis.Client, queues []string, jobID uuid.UUID, 
 		}
 
 		if job.ID == jobID {
-			if err := resetAndMoveJob(rdbClient, job, failedJobsKey, destkey, failedItem); err != nil {
+			if err := resetAndMoveJob(ctx, rdbClient, job, failedJobsKey, destkey, failedItem); err != nil {
 				return false, err
 			}
 			return true, nil
@@ -219,20 +362,20 @@ func findAndRetryJob(rdbClient *redis.Client, queues []string, jobID uuid.UUID, 
 	return false, nil
 }
 
-func resetAndMoveJob(rdbClient *redis.Client, job job.Job, failedJobsKey, destkey, failedItem string) error {
+func resetAndMoveJob(ctx context.Context, rdbClient redis.Cmdable, job job.Job, failedJobsKey, destkey, failedItem string) error {
 	job.Attempts = 0
 	updatedItem, err := sonic.Marshal(&job)
 	if err != nil {
 		return err
 	}
 
-	if _, err := rdbClient.LRem(context.Background(), failedJobsKey, 1, failedItem).Result(); err != nil {
+	if _, err := rdbClient.LRem(ctx, failedJobsKey, 1, failedItem).Result(); err != nil {
 		return err
 	}
 
-	err = rdbClient.RPush(context.Background(), destkey, updatedItem).Err()
+	err = rdbClient.RPush(ctx, destkey, updatedItem).Err()
 	if err != nil {
-		_ = rdbClient.LPush(context.Background(), failedJobsKey, failedItem).Err()
+		_ = rdbClient.LPush(ctx, failedJobsKey, failedItem).Err()
 		return err
 	}
 
@@ -240,7 +383,7 @@ func resetAndMoveJob(rdbClient *redis.Client, job job.Job, failedJobsKey, destke
 }
 
 // Moves all failed items from the destkey list back to the source list for retrying.
-func (q *Queue) RetryAllFailed() (int, error) {
+func (q *Queue) RetryAllFailed(ctx context.Context) (int, error) {
 	failedJobsKey := q.Key + "_failed"
 	destkey := q.Key
 	rdbClient := rdb.GetRedisClient()
@@ -249,7 +392,7 @@ func (q *Queue) RetryAllFailed() (int, error) {
 
 	for {
 		// Remove the failed item from the temporary list.
-		failedItem, err := rdbClient.LPop(context.Background(), failedJobsKey).Result()
+		failedItem, err := rdbClient.LPop(ctx, failedJobsKey).Result()
 		if err == redis.Nil {
 			// No more items left in the temporary list, break the loop.
 			break
@@ -259,22 +402,34 @@ func (q *Queue) RetryAllFailed() (int, error) {
 		}
 
 		// Reset the attempts counter
-		var job job.Job
-		if err := sonic.Unmarshal([]byte(failedItem), &job); err != nil {
+		var j job.Job
+		if err := sonic.Unmarshal([]byte(failedItem), &j); err != nil {
 			return count, err
 		}
-		job.Attempts = 0
-		updatedItem, err := sonic.Marshal(&job)
+		j.Attempts = 0
+		updatedItem, err := sonic.Marshal(&j)
 		if err != nil {
 			return count, err
 		}
 
 		// Add the failed item back to the source list with the reset attempts counter.
-		err = rdbClient.RPush(context.Background(), destkey, updatedItem).Err()
+		err = rdbClient.RPush(ctx, destkey, updatedItem).Err()
 		if err != nil {
 
 			// Add the failed item back to the temporary list in case of an RPush error.
-			_ = rdbClient.LPush(context.Background(), failedJobsKey, failedItem).Err()
+			_ = rdbClient.LPush(ctx, failedJobsKey, failedItem).Err()
+			return count, err
+		}
+
+		// update job status in postgres
+		if err := q.repo.Job.UpdateJobStatus(ctx, j.ID, job.StatusPending); err != nil {
+			logger.Log.Error("Error updating job status in postgres", zap.Error(err))
+			return count, err
+		}
+
+		// remove job from failed_jobs in postgres
+		if err := q.repo.Job.RemoveFailedJob(ctx, j.ID); err != nil {
+			logger.Log.Error("Error removing job from failed_jobs in postgres", zap.Error(err))
 			return count, err
 		}
 
@@ -285,10 +440,10 @@ func (q *Queue) RetryAllFailed() (int, error) {
 }
 
 // Returns the current length of the source list (the number of items in the queue).
-func (q *Queue) Length() (int64, error) {
+func (q *Queue) Length(ctx context.Context) (int64, error) {
 	rdbClient := rdb.GetRedisClient()
 
-	length, err := rdbClient.LLen(context.Background(), q.Key).Result()
+	length, err := rdbClient.LLen(ctx, q.Key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -297,10 +452,10 @@ func (q *Queue) Length() (int64, error) {
 }
 
 // IsEmpty checks if the source list (queue) is empty.
-func (q *Queue) IsEmpty() (bool, error) {
+func (q *Queue) IsEmpty(ctx context.Context) (bool, error) {
 	rdbClient := rdb.GetRedisClient()
 
-	length, err := rdbClient.LLen(context.Background(), q.Key).Result()
+	length, err := rdbClient.LLen(ctx, q.Key).Result()
 	if err != nil {
 		return false, err
 	}
@@ -309,17 +464,17 @@ func (q *Queue) IsEmpty() (bool, error) {
 }
 
 // Clear removes all items from the source list (queue).
-func (q *Queue) Clear() (int64, error) {
+func (q *Queue) Clear(ctx context.Context) (int64, error) {
 	rdbClient := rdb.GetRedisClient()
 
 	// Get the length of the queue before deleting the key.
-	length, err := rdbClient.LLen(context.Background(), q.Key).Result()
+	length, err := rdbClient.LLen(ctx, q.Key).Result()
 	if err != nil {
 		return 0, fmt.Errorf("error getting length of key %s: %w", q.Key, err)
 	}
 
 	// Remove all items from the source list.
-	_, err = rdbClient.Del(context.Background(), q.Key).Result()
+	_, err = rdbClient.Del(ctx, q.Key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -328,10 +483,10 @@ func (q *Queue) Clear() (int64, error) {
 }
 
 // RemoveJobByID removes the job with the matching job ID from the source list.
-func (q *Queue) RemoveJobByID(jobID uuid.UUID) (bool, error) {
+func (q *Queue) RemoveJobByID(ctx context.Context, jobID uuid.UUID) (bool, error) {
 	rdbClient := rdb.GetRedisClient()
 
-	queues, err := rdbClient.LRange(context.Background(), q.Key, 0, -1).Result()
+	queues, err := rdbClient.LRange(ctx, q.Key, 0, -1).Result()
 	if err != nil {
 		return false, err
 	}
@@ -344,7 +499,7 @@ func (q *Queue) RemoveJobByID(jobID uuid.UUID) (bool, error) {
 
 		if job.ID == jobID {
 			// Remove the job with the matching ID from the source list.
-			if _, err := rdbClient.LRem(context.Background(), q.Key, 1, queueItem).Result(); err != nil {
+			if _, err := rdbClient.LRem(ctx, q.Key, 1, queueItem).Result(); err != nil {
 				return false, err
 			}
 
@@ -356,11 +511,11 @@ func (q *Queue) RemoveJobByID(jobID uuid.UUID) (bool, error) {
 }
 
 // RemoveFailedByID removes the failed item with the matching job ID from the failed list.
-func (q *Queue) RemoveFailedByID(jobID uuid.UUID) error {
+func (q *Queue) RemoveFailedByID(ctx context.Context, jobID uuid.UUID) error {
 	failedJobsKey := q.Key + "_failed"
 	rdbClient := rdb.GetRedisClient()
 
-	queues, err := rdbClient.LRange(context.Background(), failedJobsKey, 0, -1).Result()
+	queues, err := rdbClient.LRange(ctx, failedJobsKey, 0, -1).Result()
 	if err != nil {
 		return err
 	}
@@ -376,7 +531,7 @@ func (q *Queue) RemoveFailedByID(jobID uuid.UUID) error {
 			found = true
 
 			// Remove the job with the matching ID from the failed list.
-			if _, err := rdbClient.LRem(context.Background(), failedJobsKey, 1, failedItem).Result(); err != nil {
+			if _, err := rdbClient.LRem(ctx, failedJobsKey, 1, failedItem).Result(); err != nil {
 				return err
 			}
 
@@ -392,17 +547,17 @@ func (q *Queue) RemoveFailedByID(jobID uuid.UUID) error {
 }
 
 // RemoveAllFailed removes all items from the failed list.
-func (q *Queue) RemoveAllFailed() (int64, error) {
+func (q *Queue) RemoveAllFailed(ctx context.Context) (int64, error) {
 	rdbClient := rdb.GetRedisClient()
 
 	// Get the length of the queue before deleting the key.
-	length, err := rdbClient.LLen(context.Background(), q.Key).Result()
+	length, err := rdbClient.LLen(ctx, q.Key).Result()
 	if err != nil {
 		return 0, fmt.Errorf("error getting length of key %s: %w", q.Key, err)
 	}
 
 	// Remove all items from the failed list.
-	_, err = rdbClient.Del(context.Background(), q.Key+"_failed").Result()
+	_, err = rdbClient.Del(ctx, q.Key+"_failed").Result()
 	if err != nil {
 		return 0, err
 	}
@@ -411,10 +566,10 @@ func (q *Queue) RemoveAllFailed() (int64, error) {
 }
 
 // Peek returns the first N items in the source list without removing them.
-func (q *Queue) Peek(count int64) ([]interface{}, error) {
+func (q *Queue) Peek(ctx context.Context, count int64) ([]interface{}, error) {
 	rdbClient := rdb.GetRedisClient()
 
-	rawItems, err := rdbClient.LRange(context.Background(), q.Key, 0, count-1).Result()
+	rawItems, err := rdbClient.LRange(ctx, q.Key, 0, count-1).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -442,14 +597,25 @@ func (q *Queue) Run(ctx context.Context) error {
 			logger.Log.Info("Context canceled, stopping the Queue")
 			return ctx.Err()
 		default:
-			_, printed := processJob(q, handlerMap, waitingMessagePrinted)
+			err, printed := processJob(ctx, q, handlerMap, waitingMessagePrinted)
+			if err != nil {
+				logger.Log.Error("Error processing job", zap.Error(err))
+			}
 			waitingMessagePrinted = printed
 		}
 	}
 }
 
-func processJob(q *Queue, handlerMap job.HandlerMap, waitingMessagePrinted bool) (error, bool) {
-	dequeuedJob, err := q.Dequeue(time.Second * 5)
+func processJob(ctx context.Context, q *Queue, handlerMap job.HandlerMap, waitingMessagePrinted bool) (err error, printed bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic occurred while processing job: %v", r)
+			printed = waitingMessagePrinted
+			logger.Log.Error("Recovered from panic", zap.Any("panic", r))
+		}
+	}()
+
+	dequeuedJob, err := q.Dequeue(ctx, time.Second*5)
 	if err != nil {
 		return fmt.Errorf("error dequeueing job: %w", err), waitingMessagePrinted
 	}
@@ -468,9 +634,8 @@ func processJob(q *Queue, handlerMap job.HandlerMap, waitingMessagePrinted bool)
 
 	handlerFunc, ok := handlerMap[dequeuedJob.HandlerName]
 	if !ok {
-		logger.Log.Error("Handler not found", zap.String("ID", dequeuedJob.ID.String()), zap.String("handler", dequeuedJob.HandlerName))
 		err := fmt.Errorf("handler not found: %v", dequeuedJob.HandlerName)
-		q.RemoveProcessed(dequeuedJob.ID, err)
+		q.RemoveProcessed(ctx, dequeuedJob.ID, err)
 		return err, waitingMessagePrinted
 	}
 
@@ -485,13 +650,13 @@ func processJob(q *Queue, handlerMap job.HandlerMap, waitingMessagePrinted bool)
 
 	logger.Log.Info("Finished processing job", zap.String("ID", dequeuedJob.ID.String()), zap.String("handler", dequeuedJob.HandlerName), zap.Any("error", handlerError))
 
-	if err != nil {
-		logger.Log.Error("Error handling job: %v", zap.String("ID", dequeuedJob.ID.String()), zap.String("handler", dequeuedJob.HandlerName), zap.Error(err))
+	if handlerError != nil {
+		logger.Log.Error("Error handling job: %v", zap.String("ID", dequeuedJob.ID.String()), zap.String("handler", dequeuedJob.HandlerName), zap.Any("error", handlerError))
 	}
 
-	err = q.RemoveProcessed(dequeuedJob.ID, handlerError)
+	err = q.RemoveProcessed(ctx, dequeuedJob.ID, handlerError)
 	if err != nil {
-		logger.Log.Info("Error removing processed job: %v", zap.String("ID", dequeuedJob.ID.String()), zap.String("handler", dequeuedJob.HandlerName), zap.Error(err))
+		return fmt.Errorf("error removing processed job: %w", err), waitingMessagePrinted
 	}
 
 	return nil, waitingMessagePrinted

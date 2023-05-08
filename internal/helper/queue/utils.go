@@ -17,7 +17,7 @@ const (
 )
 
 // ListQueueKeys retrieves all queue keys matching the queue key prefix.
-func ListQueueKeys() ([]string, error) {
+func ListQueueKeys(ctx context.Context) ([]string, error) {
 	prefix := rdb.GetQueuePrefix()
 	rdbClient := rdb.GetRedisClient()
 	var keys []string
@@ -26,13 +26,13 @@ func ListQueueKeys() ([]string, error) {
 
 	for {
 		var batch []string
-		batch, cursor, err = rdbClient.Scan(context.Background(), cursor, prefix+"*", 10).Result()
+		batch, cursor, err = rdbClient.Scan(ctx, cursor, prefix+"*", 10).Result()
 		if err != nil {
 			return nil, fmt.Errorf(ERROR_SCANNING_REDIS_KEY, err)
 		}
 
 		for _, key := range batch {
-			if !strings.HasSuffix(key, "_tmp") && !strings.HasSuffix(key, "_failed") {
+			if !strings.HasSuffix(key, "_attempt") && !strings.HasSuffix(key, "_failed") {
 				key = strings.TrimPrefix(key, prefix+"_")
 				keys = append(keys, key)
 			}
@@ -48,7 +48,7 @@ func ListQueueKeys() ([]string, error) {
 
 // ListQueueKeysAndLengths retrieves all queue keys matching the queue key prefix
 // and the number of items in each queue.
-func ListQueueKeysAndLengths() ([]QueueInfo, error) {
+func ListQueueKeysAndLengths(ctx context.Context) ([]QueueInfo, error) {
 	prefix := rdb.GetQueuePrefix()
 	rdbClient := rdb.GetRedisClient()
 	var keys []string
@@ -57,13 +57,13 @@ func ListQueueKeysAndLengths() ([]QueueInfo, error) {
 
 	for {
 		var batch []string
-		batch, cursor, err = rdbClient.Scan(context.Background(), cursor, prefix+"*", 50).Result()
+		batch, cursor, err = rdbClient.Scan(ctx, cursor, prefix+"*", 50).Result()
 		if err != nil {
 			return nil, fmt.Errorf(ERROR_SCANNING_REDIS_KEY, err)
 		}
 
 		for _, key := range batch {
-			if !strings.HasSuffix(key, "_tmp") && !strings.HasSuffix(key, "_failed") {
+			if !strings.HasSuffix(key, "_attempt") && !strings.HasSuffix(key, "_failed") {
 				keys = append(keys, key)
 			}
 		}
@@ -76,7 +76,7 @@ func ListQueueKeysAndLengths() ([]QueueInfo, error) {
 	// Retrieve the length of each queue.
 	queueInfos := make([]QueueInfo, 0, len(keys))
 	for _, key := range keys {
-		length, err := rdbClient.LLen(context.Background(), key).Result()
+		length, err := rdbClient.LLen(ctx, key).Result()
 		if err != nil {
 			return nil, fmt.Errorf(ERROR_GETTING_LENGTH_OF_KEY, key, err)
 		}
@@ -93,7 +93,7 @@ func ListQueueKeysAndLengths() ([]QueueInfo, error) {
 }
 
 // List all failed queue keys matching the queue key prefix.
-func ListFailedQueueKeys() ([]string, error) {
+func ListFailedQueueKeys(ctx context.Context) ([]string, error) {
 	prefix := rdb.GetQueuePrefix()
 	rdbClient := rdb.GetRedisClient()
 	var keys []string
@@ -102,7 +102,7 @@ func ListFailedQueueKeys() ([]string, error) {
 
 	for {
 		var batch []string
-		batch, cursor, err = rdbClient.Scan(context.Background(), cursor, prefix+"*", 10).Result()
+		batch, cursor, err = rdbClient.Scan(ctx, cursor, prefix+"*", 10).Result()
 		if err != nil {
 			return nil, fmt.Errorf(ERROR_SCANNING_REDIS_KEY, err)
 		}
@@ -122,8 +122,8 @@ func ListFailedQueueKeys() ([]string, error) {
 }
 
 // ClearAll deletes all queue keys matching the queue key prefix and returns the total number of items cleared.
-func ClearAll() (int64, error) {
-	queueKeys, err := ListQueueKeys()
+func ClearAll(ctx context.Context) (int64, error) {
+	queueKeys, err := ListQueueKeys(ctx)
 	if err != nil {
 		return 0, fmt.Errorf(ERROR_LISTING_QUEUE_KEY, err)
 	}
@@ -134,13 +134,13 @@ func ClearAll() (int64, error) {
 		key := rdb.AddQueuePrefix(key)
 
 		// Get the length of the queue before deleting the key.
-		length, err := rdbClient.LLen(context.Background(), key).Result()
+		length, err := rdbClient.LLen(ctx, key).Result()
 		if err != nil {
 			return 0, fmt.Errorf(ERROR_GETTING_LENGTH_OF_KEY, key, err)
 		}
 
 		// Delete the key.
-		err = rdbClient.Del(context.Background(), key).Err()
+		err = rdbClient.Del(ctx, key).Err()
 		if err != nil {
 			return 0, fmt.Errorf(ERROR_DELETING_KEY, key, err)
 		}
@@ -153,8 +153,8 @@ func ClearAll() (int64, error) {
 }
 
 // FlushAllFailed deletes all failed queue keys matching the queue key prefix and returns the total number of items cleared.
-func FlushAllFailed() (int64, error) {
-	queueKeys, err := ListFailedQueueKeys()
+func FlushAllFailed(ctx context.Context) (int64, error) {
+	queueKeys, err := ListFailedQueueKeys(ctx)
 	if err != nil {
 		return 0, fmt.Errorf(ERROR_LISTING_QUEUE_KEY, err)
 	}
@@ -163,13 +163,13 @@ func FlushAllFailed() (int64, error) {
 	totalCleared := int64(0)
 	for _, key := range queueKeys {
 		// Get the length of the queue before deleting the key.
-		length, err := rdbClient.LLen(context.Background(), key).Result()
+		length, err := rdbClient.LLen(ctx, key).Result()
 		if err != nil {
 			return 0, fmt.Errorf(ERROR_GETTING_LENGTH_OF_KEY, key, err)
 		}
 
 		// Delete the key.
-		err = rdbClient.Del(context.Background(), key).Err()
+		err = rdbClient.Del(ctx, key).Err()
 		if err != nil {
 			return 0, fmt.Errorf(ERROR_DELETING_KEY, key, err)
 		}
@@ -182,9 +182,9 @@ func FlushAllFailed() (int64, error) {
 }
 
 // RemoveJobByID removes a job by ID automatic traversal of all queues.
-func RemoveJobOnAnyQueueByID(jobID uuid.UUID) (string, error) {
+func RemoveJobOnAnyQueueByID(ctx context.Context, jobID uuid.UUID) (string, error) {
 	// Get all the queue keys
-	queueKeys, err := ListQueueKeys()
+	queueKeys, err := ListQueueKeys(ctx)
 	if err != nil {
 		return "", fmt.Errorf(ERROR_LISTING_QUEUE_KEY, err)
 	}
@@ -195,7 +195,7 @@ func RemoveJobOnAnyQueueByID(jobID uuid.UUID) (string, error) {
 		println(q.Key)
 
 		// Check if the job is in the main queue
-		isDeleted, err := q.RemoveJobByID(jobID)
+		isDeleted, err := q.RemoveJobByID(ctx, jobID)
 		if err != nil {
 			return "", fmt.Errorf("error removing job with ID %s from queue %s: %w", jobID, q.KeyWithoutPrefix, err)
 		}

@@ -10,7 +10,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kondohiroki/go-boilerplate/internal/helper/queue"
+	"github.com/kondohiroki/go-boilerplate/internal/job"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
+	"github.com/kondohiroki/go-boilerplate/internal/repository"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -23,6 +25,7 @@ func init() {
 		queueFlushCommand,
 		queueForgetCommand,
 		queueRetryCommand,
+		queueRestoreCommand,
 	)
 
 	queueWorkCommand.Flags().StringP("queue", "q", "default", "(optional) queue name. for example: -q emails")
@@ -50,6 +53,10 @@ func init() {
 	queueForgetCommand.Flags().StringP("id", "i", "", "(optional) job id. for example: --id df6df3af-d53d-49c2-bd50-80ba1d32b17b")
 	queueForgetCommand.MarkFlagRequired("id")
 	queueForgetCommand.Example = `  queue:forget -i df6df3af-d53d-49c2-bd50-80ba1d32b17b`
+
+	queueRestoreCommand.Flags().StringP("queue", "q", "default", "(optional) queue name. for example: -q emails")
+	queueRestoreCommand.Example = "  queue:restore"
+	queueRestoreCommand.Example += "\n  queue:restore -q emails"
 }
 
 var queueWorkCommand = &cobra.Command{
@@ -106,6 +113,8 @@ var queueRetryCommand = &cobra.Command{
 	Short:   "Retry a failed queue job",
 	GroupID: "queue",
 	Run: func(cmd *cobra.Command, _ []string) {
+		ctx := cmd.Context()
+
 		// Setup all the required dependencies
 		setupAll()
 
@@ -121,7 +130,7 @@ var queueRetryCommand = &cobra.Command{
 				return
 			}
 
-			err = q.RetryFailedByJobID(uuid)
+			err = q.RetryFailedByJobID(ctx, uuid)
 			if err != nil {
 				logger.Log.Error("Queue retry failed", zap.String("job_id", jobID), zap.Error(err))
 			} else {
@@ -129,7 +138,7 @@ var queueRetryCommand = &cobra.Command{
 			}
 
 		} else { // retry all failed jobs
-			totalFailed, err := q.RetryAllFailed()
+			totalFailed, err := q.RetryAllFailed(ctx)
 			if err != nil {
 				logger.Log.Error("Queue retry failed", zap.Error(err))
 			} else {
@@ -146,6 +155,7 @@ var queueClearCommand = &cobra.Command{
 	GroupID: "queue",
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, _ []string) {
+		ctx := cmd.Context()
 		// Setup all the required dependencies
 		setupAll()
 
@@ -153,7 +163,7 @@ var queueClearCommand = &cobra.Command{
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			totalDeleted, err := queue.ClearAll()
+			totalDeleted, err := queue.ClearAll(ctx)
 			if err != nil {
 				logger.Log.Error("Queue clear failed", zap.Error(err))
 			} else {
@@ -163,7 +173,7 @@ var queueClearCommand = &cobra.Command{
 		}
 
 		q := queue.NewQueue(queueName)
-		totalDeleted, err := q.Clear()
+		totalDeleted, err := q.Clear(ctx)
 		if err != nil {
 			logger.Log.Error("Queue clear failed", zap.Error(err))
 		} else {
@@ -179,6 +189,8 @@ var queueFlushCommand = &cobra.Command{
 	GroupID: "queue",
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, _ []string) {
+		ctx := cmd.Context()
+
 		// Setup all the required dependencies
 		setupAll()
 
@@ -186,7 +198,7 @@ var queueFlushCommand = &cobra.Command{
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			totalDeleted, err := queue.FlushAllFailed()
+			totalDeleted, err := queue.FlushAllFailed(ctx)
 			if err != nil {
 				logger.Log.Error("Queue clear failed_jobs failed", zap.Error(err))
 			} else {
@@ -196,7 +208,7 @@ var queueFlushCommand = &cobra.Command{
 		}
 
 		q := queue.NewQueue(queueName)
-		totalDeleted, err := q.RemoveAllFailed()
+		totalDeleted, err := q.RemoveAllFailed(ctx)
 		if err != nil {
 			logger.Log.Error("Queue clear failed_jobs failed", zap.Error(err))
 		} else {
@@ -211,6 +223,8 @@ var queueForgetCommand = &cobra.Command{
 	Short:   "Delete a failed queue job",
 	GroupID: "queue",
 	Run: func(cmd *cobra.Command, _ []string) {
+		ctx := cmd.Context()
+
 		// Setup all the required dependencies
 		setupAll()
 
@@ -223,11 +237,73 @@ var queueForgetCommand = &cobra.Command{
 				return
 			}
 
-			queueName, err := queue.RemoveJobOnAnyQueueByID(uuid)
+			queueName, err := queue.RemoveJobOnAnyQueueByID(ctx, uuid)
 			if err != nil {
 				logger.Log.Error("Queue forget failed", zap.Error(err))
 			} else {
 				logger.Log.Info(fmt.Sprintf("Queue forget completed. Job %s deleted from queue %s", jobID, queueName))
+			}
+		}
+
+	},
+}
+
+var queueRestoreCommand = &cobra.Command{
+	Use:     "queue:restore",
+	Short:   "Restore a failed and unfinished job to the redis queue",
+	GroupID: "queue",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+
+		// Setup all the required dependencies
+		setupAll()
+
+		queueName, _ := cmd.Flags().GetString("queue")
+		q := queue.NewQueue(queueName)
+
+		repo := repository.NewRepository()
+
+		// Get all pending jobs and restore them to the redis queue
+		unfinishedJobs, err := repo.Job.GetUnfinishedJobs(ctx)
+		if err != nil {
+			logger.Log.Error("Get pending jobs error", zap.Error(err))
+			return
+		}
+
+		if len(unfinishedJobs) == 0 {
+			logger.Log.Info("No unfinished jobs found")
+			return
+		}
+
+		if len(unfinishedJobs) > 0 {
+			logger.Log.Info(fmt.Sprintf("Found %d unfinished jobs", len(unfinishedJobs)))
+
+			// reset all processing jobs to pending
+			err = repo.Job.ResetProcessingJobsToPending(ctx)
+		}
+
+		for _, j := range unfinishedJobs {
+			jobItem, err := job.NewJob(
+				j.HandlerName,
+				j.Payload,
+				j.MaxAttempts,
+				j.Delay,
+			)
+			if err != nil {
+				logger.Log.Error("New job error", zap.Error(err))
+				continue
+			}
+
+			if j.Status == job.StatusFailed {
+				err = q.EnqueueFailedJobs(ctx, jobItem)
+			} else if j.Status == job.StatusPending {
+				err = q.EnqueuePendingJobs(ctx, jobItem)
+			}
+
+			if err != nil {
+				logger.Log.Error("Restore job error", zap.Error(err))
+			} else {
+				logger.Log.Info(fmt.Sprintf("Queue restore completed. Job %s restored to queue %s", j.ID, queueName))
 			}
 		}
 

@@ -6,7 +6,7 @@
 This boilerplate is intended to be used as a starting point for a go application. It is not intended to be used as a but it is can be.
 
 <p align="center">
-<img src="https://user-images.githubusercontent.com/49369000/233607556-d81d6d06-9c67-4d45-8fd1-6038c549b4b9.png"  width="600" />
+<img src="https://user-images.githubusercontent.com/49369000/236752939-05e510db-a5ae-42ad-b1aa-da1c0222418b.png"  width="600" />
 </p>
 
 ## Getting Started

@@ -1,22 +1,24 @@
 package queue
 
 import (
+	"context"
+
 	"github.com/kondohiroki/go-boilerplate/internal/helper/queue"
 	"github.com/kondohiroki/go-boilerplate/internal/repository"
 )
 
 type QueueApp interface {
-	GetQueues() ([]GetQueueDTO, error)
+	GetQueues(ctx context.Context) ([]GetQueueDTO, error)
 	// GetQueueByID(GetQueueDTI) (GetQueueDTO, error)
 }
 
 type queueApp struct {
-	Repo repository.Repository
+	Repo *repository.Repository
 }
 
-func NewQueueApp() QueueApp {
+func NewQueueApp(repo *repository.Repository) QueueApp {
 	return &queueApp{
-		Repo: *repository.NewRepository(),
+		Repo: repo,
 	}
 }
 
@@ -30,10 +32,10 @@ type GetQueueDTO struct {
 	NumberOfItems    int64  `json:"number_of_items"`
 }
 
-func (app *queueApp) GetQueues() ([]GetQueueDTO, error) {
+func (app *queueApp) GetQueues(ctx context.Context) ([]GetQueueDTO, error) {
 	var queues []GetQueueDTO
 
-	qs, err := queue.ListQueueKeysAndLengths()
+	qs, err := queue.ListQueueKeysAndLengths(ctx)
 	if err != nil {
 		return nil, err
 	}

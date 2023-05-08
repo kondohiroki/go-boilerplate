@@ -19,12 +19,12 @@ type Job struct {
 	CreatedAt   time.Time       `json:"created_at"`
 	MaxAttempts int             `json:"max_attempts"`
 	Attempts    int             `json:"attempts"`
-	Delay       time.Duration   `json:"delay"`
+	Delay       int             `json:"delay"` // in seconds
 	Errors      []string        `json:"errors"`
 }
 
 // NewJob creates a new Job with the given queue name and payload.
-func NewJob(handlerName string, payload any, maxAttempts int, delay time.Duration) (*Job, error) {
+func NewJob(handlerName string, payload any, maxAttempts int, delay int) (*Job, error) {
 	jobID := uuid.New()
 	createdAt := time.Now()
 

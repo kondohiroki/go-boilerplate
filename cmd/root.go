@@ -94,7 +94,7 @@ func setUpPostgres() {
 
 func setUpRedis() {
 	// Create the database connection pool
-	if config.GetConfig().Redis.Host != "" {
+	if config.GetConfig().Redis[0].Host != "" {
 		logger.Log.Info("Initializing redis")
 		err := rdb.InitRedisClient(config.GetConfig().Redis)
 		if err != nil {

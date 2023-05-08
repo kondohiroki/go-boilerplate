@@ -11,21 +11,51 @@ import (
 	"go.uber.org/zap"
 )
 
-var rdb *redis.Client
+var rdb redis.Cmdable
 var m sync.Mutex
 var prefix string
 var queuePrefix string
 
-func InitRedisClient(redisConfig config.Redis) error {
+type RedisCredentials struct {
+	Password string
+	Database int
+}
+
+func InitRedisClient(redisConfigs []config.Redis) error {
 	m.Lock()
 	defer m.Unlock()
 
-	addr := fmt.Sprintf("%s:%d", redisConfig.Host, redisConfig.Port)
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: redisConfig.Password,
-		DB:       redisConfig.Database,
-	})
+	// Prepare a list of Redis addresses
+	// Prepare a list of Redis addresses and a map of their corresponding credentials
+	var addrs []string
+	creds := make(map[string]RedisCredentials)
+	for _, redisConfig := range redisConfigs {
+		addr := fmt.Sprintf("%s:%d", redisConfig.Host, redisConfig.Port)
+		addrs = append(addrs, addr)
+		creds[addr] = RedisCredentials{
+			Password: redisConfig.Password,
+			Database: redisConfig.Database,
+		}
+	}
+
+	if len(addrs) == 1 {
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     addrs[0],
+			Password: creds[addrs[0]].Password,
+			DB:       creds[addrs[0]].Database,
+		})
+	} else {
+		rdb = redis.NewClusterClient(&redis.ClusterOptions{
+			Addrs: addrs,
+			NewClient: func(opt *redis.Options) *redis.Client {
+				cred := creds[opt.Addr]
+				opt.Password = cred.Password
+				opt.DB = cred.Database
+
+				return redis.NewClient(opt)
+			},
+		})
+	}
 
 	_, err := rdb.Ping(context.Background()).Result()
 	if err != nil {
@@ -35,11 +65,12 @@ func InitRedisClient(redisConfig config.Redis) error {
 	// Set the prefix string
 	// for whoever is using AddPrefix() or GetPrefix()
 	prefix = config.GetConfig().App.NameSlug
+	queuePrefix = config.GetConfig().App.NameSlug + "_queue"
 
 	return nil
 }
 
-func GetRedisClient() *redis.Client {
+func GetRedisClient() redis.Cmdable {
 	if rdb == nil {
 		m.Lock()
 		defer m.Unlock()

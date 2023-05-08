@@ -28,10 +28,10 @@ postgres:
   maxIdleConnections: 10
 
 Redis:
-  host: "localhost"
-  port: 63791
-  password: ""
-  db: 0
+  - host: "localhost"
+    port: 63791
+    password: ""
+    db: 0
 
 sentry:
   dsn: ""

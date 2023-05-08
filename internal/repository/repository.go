@@ -7,6 +7,7 @@ import (
 
 type Repository struct {
 	User UserRepository
+	Job  JobRepository
 }
 
 func NewRepository() *Repository {
@@ -15,5 +16,6 @@ func NewRepository() *Repository {
 
 	return &Repository{
 		User: NewUserRepository(pgxPool, redisClient),
+		Job:  NewJobRepository(pgxPool),
 	}
 }

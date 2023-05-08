@@ -15,7 +15,7 @@ func NewQueueHTTPHandler(app queue.QueueApp) *QueueHTTPHandler {
 }
 
 func (h *QueueHTTPHandler) GetQueues(c *fiber.Ctx) error {
-	dtos, err := h.app.GetQueues()
+	dtos, err := h.app.GetQueues(c.Context())
 	if err != nil {
 		return err
 	}

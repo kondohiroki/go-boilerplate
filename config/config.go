@@ -19,7 +19,7 @@ type Config struct {
 	Scheduler  Scheduler  `yaml:"scheduler"`
 	Schedules  []Schedule `yaml:"schedules"`
 	Postgres   Postgres   `yaml:"postgres"`
-	Redis      Redis      `yaml:"redis"`
+	Redis      []Redis    `yaml:"redis"`
 	Sentry     Sentry     `yaml:"sentry"`
 }
 
