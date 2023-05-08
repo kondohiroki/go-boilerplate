@@ -22,8 +22,8 @@ var createJobQueueTable = &Migration{
 			"max_attempts" INTEGER DEFAULT 1,
 			"delay" int,
 			"status" VARCHAR(255),
-			"created_at" TIMESTAMPTZ,
-			"updated_at" TIMESTAMPTZ
+			"created_at" TIMESTAMPTZ DEFAULT NOW(),
+			"updated_at" TIMESTAMPTZ DEFAULT NOW()
 		  );
 
 		  COMMENT ON COLUMN jobs.status IS 'The status of the job, which can be one of the following: pending, processing, completed, or failed.';
