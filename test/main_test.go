@@ -12,11 +12,13 @@ import (
 	"github.com/kondohiroki/go-boilerplate/internal/db/pgx"
 	"github.com/kondohiroki/go-boilerplate/internal/db/rdb"
 	"github.com/kondohiroki/go-boilerplate/internal/logger"
+	"github.com/kondohiroki/go-boilerplate/internal/repository"
 	"github.com/kondohiroki/go-boilerplate/internal/router"
 	"github.com/valyala/fasthttp"
 )
 
 var r *fiber.App
+var repo *repository.Repository
 
 // TestMain is the entry point for running tests
 func TestMain(m *testing.M) {
@@ -56,6 +58,12 @@ func setup() {
 		panic("Failed to migrate database")
 	}
 	println("migrate database done")
+
+	// Set up repository
+	repo = repository.NewRepository()
+	if repo == nil {
+		panic("Failed to set up repository")
+	}
 
 	// Set up router
 	println("setup router")
