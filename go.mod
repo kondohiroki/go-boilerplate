@@ -6,7 +6,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.21.0
 	github.com/bytedance/sonic v1.8.8
 	github.com/gavv/httpexpect/v2 v2.15.0
-	github.com/getsentry/sentry-go v0.20.0
+	github.com/getsentry/sentry-go v0.21.0
 	github.com/go-co-op/gocron v1.25.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
