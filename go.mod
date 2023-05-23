@@ -20,7 +20,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/swaggo/swag v1.16.1
 	github.com/valyala/fasthttp v1.47.0
 	go.uber.org/zap v1.24.0
