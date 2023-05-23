@@ -4,10 +4,10 @@ go 1.20
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.21.0
-	github.com/bytedance/sonic v1.8.8
+	github.com/bytedance/sonic v1.8.9
 	github.com/gavv/httpexpect/v2 v2.15.0
 	github.com/getsentry/sentry-go v0.21.0
-	github.com/go-co-op/gocron v1.25.0
+	github.com/go-co-op/gocron v1.27.1
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.14.0
@@ -20,7 +20,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/swaggo/swag v1.16.1
 	github.com/valyala/fasthttp v1.47.0
 	go.uber.org/zap v1.24.0
