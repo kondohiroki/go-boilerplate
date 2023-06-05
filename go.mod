@@ -7,7 +7,7 @@ require (
 	github.com/bytedance/sonic v1.8.9
 	github.com/gavv/httpexpect/v2 v2.15.0
 	github.com/getsentry/sentry-go v0.21.0
-	github.com/go-co-op/gocron v1.27.1
+	github.com/go-co-op/gocron v1.28.2
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.14.0
