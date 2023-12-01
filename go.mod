@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.21.0
-	github.com/bytedance/sonic v1.8.9
+	github.com/bytedance/sonic v1.10.0
 	github.com/gavv/httpexpect/v2 v2.15.0
 	github.com/getsentry/sentry-go v0.21.0
 	github.com/go-co-op/gocron v1.27.1
@@ -27,14 +27,17 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
-require github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+require (
+	github.com/chenzhuoyu/iasm v0.9.0 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
+	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.15.0 // indirect
