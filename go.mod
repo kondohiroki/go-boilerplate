@@ -10,7 +10,7 @@ require (
 	github.com/go-co-op/gocron v1.32.1
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.15.1
+	github.com/go-playground/validator/v10 v10.16.0
 	github.com/gofiber/contrib/fibersentry v1.0.2
 	github.com/gofiber/fiber/v2 v2.50.0
 	github.com/iancoleman/strcase v0.2.0
