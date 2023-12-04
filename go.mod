@@ -13,7 +13,7 @@ require (
 	github.com/go-playground/validator/v10 v10.15.1
 	github.com/gofiber/contrib/fibersentry v1.0.2
 	github.com/gofiber/fiber/v2 v2.50.0
-	github.com/iancoleman/strcase v0.2.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/lnquy/cron v1.1.1
